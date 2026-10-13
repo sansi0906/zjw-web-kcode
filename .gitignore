@@ -1,0 +1,45 @@
+# Sensitive files
+open_urls.py
+diag_stats.py
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Debug output
+scripts/deep_*.txt
+scripts/intelligent_construction_report.txt
+scripts/deep_*.json
+scripts/element_report.txt
+scripts/elements.json
+scripts/elements_output.txt
+scripts/all_elements_*.json
+scripts/*_elements.json
+scripts/*.png
+
+# Temporary check scripts
+tmp_*.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# pytest
+.pytest_cache/
+.pytest_cache
+
+# Test reports and logs
+reports/
+logs/
+bugs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
