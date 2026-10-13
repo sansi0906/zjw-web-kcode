@@ -1,0 +1,46 @@
+# 测试数据配置
+# 支持多环境数据
+
+environments:
+  dev:
+    base_url: "http://dev.tj.gongrenle.com/"
+  staging:
+    base_url: "https://staging.tjjzcy.com/"
+  prod:
+    base_url: "https://www.tjjzcy.com/"
+
+# 测试用户
+test_users:
+  - username: "test_user_01"
+    password: "Test@123456"
+  - username: "test_user_02"
+    password: "Test@123456"
+
+# 供应链地图区域数据
+regions:
+  - name: "东丽区"
+    expected_keyword: "台上洗脸盆"
+  - name: "西青区"
+    expected_keyword: "门窗"
+
+# 产业需求筛选关键词
+demand_filters:
+  建筑建材:
+    - "配电箱"
+    - "建材"
+  机械设备:
+    - "施工电梯"
+    - "塔吊"
+    - "挖掘机"
+  劳务用工:
+    - "司机"
+    - "劳务"
+  技术服务:
+    - "招标"
+    - "技术"
+
+# 页面标题关键词验证
+page_titles:
+  home: "天津市建筑产业互联网平台"
+  supply_hall: "建材"
+  demand: "需求"
