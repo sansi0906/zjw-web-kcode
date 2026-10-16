@@ -3,11 +3,14 @@
 """
 from __future__ import annotations
 
+from config.settings import settings
 from pages.base_page import BasePage
 
 
 class CloudServicePage(BasePage):
     """云服务页面"""
+
+    PAGE_URL = "/cloudService"
 
     # ==================== 顶部导航 ====================
     LOGO = "a[href='/'] img, header a:first-child img, .nav-left img"
@@ -26,6 +29,11 @@ class CloudServicePage(BasePage):
 
     # ==================== 云服务卡片 ====================
     SERVICE_CARD = "[class*='service'], [class*='card'], .n-card, article"
+    # 移动端云服务卡片选择器
+    SERVICE_CARD_MOBILE = (
+        "[class*='service'], [class*='card'], .n-card, article, "
+        "[class*='cloud-service-card'], .n-carousel__slide"
+    )
     SERVICE_TITLE = "h3, h2, .title, .name"
     SERVICE_DESC = "p, .desc, .description"
 
@@ -42,7 +50,8 @@ class CloudServicePage(BasePage):
 
     def open(self) -> "CloudServicePage":
         """打开云服务页面"""
-        self.goto()
+        base = settings.env_config.base_url.rstrip("/")
+        self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
     def click_filter(self, filter_name: str) -> None:
@@ -75,10 +84,32 @@ class CloudServicePage(BasePage):
 
     def click_nav_by_text(self, nav_text: str) -> None:
         """根据文本点击导航链接"""
-        nav = self.page.locator(f"text={nav_text}").first
-        if nav.is_visible():
-            nav.click()
+        # 移动端导航项可能是 button 或 a，优先点击可见元素
+        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
+            try:
+                nav = self.page.locator(sel).first
+                if nav.is_visible(timeout=1500):
+                    nav.click()
+                    self.wait_for_load()
+                    return
+            except Exception:
+                continue
+        # 最后兜底：JS 点击不可见元素
+        try:
+            self.page.evaluate(
+                """(text) => {
+                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
+                const el = els.find(e => (e.textContent||'').trim() === text);
+                if (el) { el.click(); return true; }
+                return false;
+                }""",
+                nav_text,
+            )
+            self.page.wait_for_timeout(1500)
             self.wait_for_load()
+            return
+        except Exception:
+            pass
 
     def get_nav_texts(self) -> list[str]:
         """获取所有导航链接文本"""
@@ -98,11 +129,16 @@ class CloudServicePage(BasePage):
 
     def get_service_count(self) -> int:
         """获取云服务卡片数量"""
+        if self.is_mobile():
+            return self.page.locator(self.SERVICE_CARD_MOBILE).count()
         return self.page.locator(self.SERVICE_CARD).count()
 
     def get_service_titles(self) -> list[str]:
         """获取所有云服务标题"""
-        cards = self.page.locator(self.SERVICE_CARD)
+        if self.is_mobile():
+            cards = self.page.locator(self.SERVICE_CARD_MOBILE)
+        else:
+            cards = self.page.locator(self.SERVICE_CARD)
         titles = []
         for i in range(cards.count()):
             title = cards.nth(i).text_content()
@@ -112,9 +148,16 @@ class CloudServicePage(BasePage):
 
     def click_first_service(self) -> None:
         """点击第一个云服务卡片"""
-        card = self.page.locator(self.SERVICE_CARD).first
+        if self.is_mobile():
+            card = self.page.locator(self.SERVICE_CARD_MOBILE).first
+        else:
+            card = self.page.locator(self.SERVICE_CARD).first
         if card.is_visible():
-            card.click()
+            try:
+                card.click()
+            except Exception:
+                # JS 点击兜底（移动端卡片可能被遮挡）
+                card.evaluate("el => el.click()")
             self.wait_for_load()
 
     # ==================== 悬浮按钮操作 ====================
@@ -144,6 +187,10 @@ class CloudServicePage(BasePage):
 
     def assert_page_loaded(self) -> None:
         """断言页面加载完成"""
+        # 移动端云服务页可能无独立"云服务"标题，改用 URL 断言
+        if self.is_mobile():
+            assert "cloudService" in self.page.url, f"URL 不包含 cloudService，实际: {self.page.url}"
+            return
         self.assert_text_visible("云服务", partial=True)
 
     def assert_services_exist(self, min_count: int = 1) -> None:

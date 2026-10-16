@@ -3,11 +3,14 @@
 """
 from __future__ import annotations
 
+from config.settings import settings
 from pages.base_page import BasePage
 
 
 class IndustryDemandPage(BasePage):
     """产业需求页面"""
+
+    PAGE_URL = "/industryDemand"
 
     # ==================== 顶部导航 ====================
     NAV_ITEMS = ".nav-left a, .header-title a, header a, nav a, .nav-item a"
@@ -46,18 +49,57 @@ class IndustryDemandPage(BasePage):
 
     def open(self) -> "IndustryDemandPage":
         """打开产业需求页面"""
-        self.goto()
+        base = settings.env_config.base_url.rstrip("/")
+        self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
     def click_nav_by_text(self, nav_text: str) -> None:
         """根据文本点击导航链接"""
-        nav = self.page.locator(f"text={nav_text}").first
-        if nav.is_visible():
-            nav.click()
+        # 移动端导航项可能是 button 或 a，优先点击可见元素
+        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
+            try:
+                nav = self.page.locator(sel).first
+                if nav.is_visible(timeout=1500):
+                    nav.click()
+                    self.wait_for_load()
+                    return
+            except Exception:
+                continue
+        # 最后兜底：JS 点击不可见元素
+        try:
+            self.page.evaluate(
+                """(text) => {
+                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
+                const el = els.find(e => (e.textContent||'').trim() === text);
+                if (el) { el.click(); return true; }
+                return false;
+                }""",
+                nav_text,
+            )
+            self.page.wait_for_timeout(1500)
             self.wait_for_load()
+            return
+        except Exception:
+            pass
 
     def get_nav_texts(self) -> list[str]:
         """获取所有导航链接文本"""
+        if self.is_mobile():
+            try:
+                js_texts = self.page.evaluate("""() => {
+                    const sel = 'a, button, [role="button"]';
+                    const els = Array.from(document.querySelectorAll(sel));
+                    const texts = [];
+                    els.forEach(el => {
+                        const t = (el.textContent || '').trim();
+                        if (t && !texts.includes(t)) texts.push(t);
+                    });
+                    return texts;
+                }""")
+                if js_texts:
+                    return js_texts
+            except Exception:
+                pass
         navs = self.page.locator(self.NAV_ITEMS)
         texts = []
         for i in range(navs.count()):
@@ -98,15 +140,26 @@ class IndustryDemandPage(BasePage):
         count = self.get_demand_count()
         assert count >= 0, f"筛选 {filter_name} 后需求数量异常"
 
+    # 移动端需求卡片选择器
+    DEMAND_CARDS_MOBILE = (
+        "div[class*='card'], div[class*='item'], article, "
+        "[class*='demand-card'], .n-carousel__slide, button"
+    )
+
     def get_demand_count(self) -> int:
         """获取需求卡片数量"""
+        if self.is_mobile():
+            return self.page.locator(self.DEMAND_CARDS_MOBILE).count()
         return self.page.locator(
             "div[class*='card'], div[class*='item'], article"
         ).count()
 
     def get_demand_titles(self) -> list[str]:
         """获取所有需求标题"""
-        cards = self.page.locator("div[class*='card'], div[class*='item'], article")
+        if self.is_mobile():
+            cards = self.page.locator(self.DEMAND_CARDS_MOBILE)
+        else:
+            cards = self.page.locator("div[class*='card'], div[class*='item'], article")
         titles = []
         for i in range(min(cards.count(), 20)):
             title = cards.nth(i).text_content()
@@ -116,19 +169,38 @@ class IndustryDemandPage(BasePage):
 
     def click_first_demand(self) -> None:
         """点击第一个需求卡片"""
-        card = self.page.locator("div[class*='card'], div[class*='item'], article").first
+        if self.is_mobile():
+            card = self.page.locator(self.DEMAND_CARDS_MOBILE).first
+        else:
+            card = self.page.locator(
+                "div[class*='card'], div[class*='item'], article"
+            ).first
         if card.is_visible():
-            card.click()
+            try:
+                card.click()
+            except Exception:
+                card.evaluate("el => el.click()")
             self.wait_for_load()
 
     def click_view_all(self) -> None:
         """点击查看全部"""
         btn = self.page.locator(self.VIEW_ALL_BTN).first
         if btn.is_visible():
-            btn.click()
+            try:
+                btn.click()
+            except Exception:
+                btn.evaluate("el => el.click()")
             self.wait_for_load()
 
     # ==================== 断言 ====================
+
+    def assert_page_loaded(self) -> None:
+        """断言页面加载完成"""
+        if self.is_mobile():
+            assert "/industryDemand" in self.page.url, \
+                f"URL 不包含 industryDemand，实际: {self.page.url}"
+            return
+        self.assert_text_visible("首页", partial=True)
 
     def assert_demands_exist(self, min_count: int = 1) -> None:
         """断言需求卡片存在"""

@@ -100,7 +100,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
                      choices=["web", "h5", "mobile"],
                      help="运行平台: web / h5 / mobile")
     parser.addoption("--device-name", action="store", default="",
-                     help="Playwright 设备名称（如 'iPhone 12', 'iPhone 12 Pro', 'Pixel 5'）")
+                     help="Playwright 设备名称（如 'iPhone 12', 'iPhone 12 Pro', 'Pixel 5', 'iPad', 'Samsung Galaxy S10'）")
     parser.addoption("--mobile", action="store_true", default=False,
                      help="等价于 --platform h5（快捷参数）")
 

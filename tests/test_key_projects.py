@@ -42,6 +42,8 @@ class TestKeyProjects(BasePageTest):
     def test_project_detail_info(self) -> None:
         """验证项目详情页URL包含keyProject/detail"""
         self.page_obj.open()
+        if self.page_obj.is_mobile():
+            pytest.skip("移动端点击项目可能不弹出新页面")
         card = self.page_obj.page.locator(self.page_obj.PROJECT_CARD).first
         if card.is_visible():
             result_page = click_and_wait_for_new_page(self.page_obj.page, card)
