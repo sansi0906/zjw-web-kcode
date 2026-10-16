@@ -56,6 +56,10 @@ class TestConfig(BaseSettings):
     screenshots_dir: str = "reports/screenshots"
     logs_dir: str = "logs"
 
+    # 平台/设备
+    platform: str = Field(default="web", alias="PLATFORM")
+    device: str = Field(default="", alias="DEVICE")
+
     # 测试人员（可通过命令行覆盖）
     tester: str = ""
     remark: str = ""
@@ -70,6 +74,11 @@ class TestConfig(BaseSettings):
             viewport_height=self.viewport_height,
             browser_type=self.browser_type,
         )
+
+    @property
+    def is_mobile(self) -> bool:
+        p = (self.platform or "").lower()
+        return p in ("h5", "mobile") or bool(self.device)
 
     @property
     def env_config(self) -> EnvConfig:
