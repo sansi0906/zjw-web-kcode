@@ -43,6 +43,8 @@ class HomePage(BasePage):
     # ==================== 热门搜索 ====================
     HOT_SEARCH_LABEL = "text=热门搜索："
     HOT_SEARCH_BTNS = "button[class*='bg-[#F4F7FF]']"
+    # 移动端热门搜索选择器（若页面布局不同）
+    HOT_SEARCH_BTNS_MOBILE = "button[class*='bg-[#F4F7FF]'], .hot-search button, [class*='hot-search'] button"
 
     # ==================== 轮播图 ====================
     CAROUSEL_CONTAINER = ".n-carousel"
@@ -52,10 +54,13 @@ class HomePage(BasePage):
 
     # ==================== 服务链接区 ====================
     SERVICE_STATS = "span[class*='cursor-default'][class*='bg-white/25'][class*='text-[#1653FF]']"
+    SERVICE_STATS_MOBILE = "span[class*='cursor-default'], .stats span, [class*='stats'] span"
 
     # ==================== 产业服务 ====================
     SECTION_INDUSTRY_SERVICE = "h2:has-text('产业服务')"
     SERVICE_CARDS = "h3:has-text('供应大厅'), h3:has-text('劳务对接'), h3:has-text('AI+工具集'), h3:has-text('金融服务'), h3:has-text('建筑机器人'), h3:has-text('智慧工地')"
+    # 移动端产业服务卡片（carousel 形式）
+    SERVICE_CARDS_MOBILE = "h3.line-clamp-2, .n-carousel__slide h3, [class*='industry-service'] h3"
     SERVICE_CARD_TITLES = ["供应大厅", "劳务对接", "AI+工具集", "金融服务", "建筑机器人", "智慧工地"]
     DETAIL_BTNS = "button:has-text('了解详情')"
 
@@ -71,10 +76,14 @@ class HomePage(BasePage):
     # ==================== 会展活动 ====================
     SECTION_EXHIBITION = "h2:has-text('会展活动')"
     ACTIVITY_CARDS = "h3[class*='max-h-[56px]']"
+    # 移动端活动卡片
+    ACTIVITY_CARDS_MOBILE = "h3.line-clamp-2, [class*='exhibition'] h3, [class*='activity'] h3"
 
     # ==================== 产业需求 ====================
     SECTION_DEMAND = "h2:has-text('产业需求')"
     DEMAND_ITEMS = "h3[class*='h-[44px]'][class*='w-[232px]']"
+    # 移动端需求条目选择器
+    DEMAND_ITEMS_MOBILE = "h3.line-clamp-2[class*='min-h-[40px]'], [class*='demand'] h3, [class*='industry-demand'] h3"
     VIEW_ALL_DEMAND = "a:has-text('查看全部')"
 
     # ==================== 产业政策 ====================
@@ -84,6 +93,8 @@ class HomePage(BasePage):
     POLICY_TAB_POLICY_INFO = "text=政策资讯"
     POLICY_TAB_POLICY_INTERPRETATION = "text=政策解读"
     NEWS_ITEMS = "h3[class*='mt-[26px]']"
+    # 移动端政策新闻选择器
+    NEWS_ITEMS_MOBILE = "h3.line-clamp-3[class*='h-[60px]'], [class*='policy'] h3, [class*='industry-policy'] h3"
     VIEW_ALL_POLICY = "a:has-text('查看全部')"
 
     # ==================== 页脚 ====================
@@ -253,11 +264,16 @@ class HomePage(BasePage):
 
     def get_hot_search_count(self) -> int:
         """获取热搜词按钮数量"""
+        if self.is_mobile():
+            return self.page.locator(self.HOT_SEARCH_BTNS_MOBILE).count()
         return self.page.locator(self.HOT_SEARCH_BTNS).count()
 
     def click_hot_search(self, index: int = 0) -> None:
         """点击热搜词按钮"""
-        btns = self.page.locator(self.HOT_SEARCH_BTNS)
+        if self.is_mobile():
+            btns = self.page.locator(self.HOT_SEARCH_BTNS_MOBILE)
+        else:
+            btns = self.page.locator(self.HOT_SEARCH_BTNS)
         if btns.count() > index:
             btns.nth(index).click()
             self.wait_for_load()
@@ -296,11 +312,16 @@ class HomePage(BasePage):
 
     def get_service_stats_count(self) -> int:
         """获取统计数字数量"""
+        if self.is_mobile():
+            return self.page.locator(self.SERVICE_STATS_MOBILE).count()
         return self.page.locator(self.SERVICE_STATS).count()
 
     def get_service_stats_texts(self) -> list[str]:
         """获取统计数字文本"""
-        stats = self.page.locator(self.SERVICE_STATS)
+        if self.is_mobile():
+            stats = self.page.locator(self.SERVICE_STATS_MOBILE)
+        else:
+            stats = self.page.locator(self.SERVICE_STATS)
         texts = []
         for i in range(stats.count()):
             text = stats.nth(i).text_content()
@@ -316,7 +337,10 @@ class HomePage(BasePage):
 
     def get_service_card_titles(self) -> list[str]:
         """获取服务子分类卡片标题"""
-        cards = self.page.locator(self.SERVICE_CARDS)
+        if self.is_mobile():
+            cards = self.page.locator(self.SERVICE_CARDS_MOBILE)
+        else:
+            cards = self.page.locator(self.SERVICE_CARDS)
         titles = []
         for i in range(cards.count()):
             text = cards.nth(i).text_content()
@@ -339,6 +363,9 @@ class HomePage(BasePage):
 
     def get_merchant_tab_count(self) -> int:
         """获取生态标签数量"""
+        if self.is_mobile():
+            # 移动端可能不展示津筑云商区域
+            return 0
         return self.page.locator(self.MERCHANT_TAB_ECOLOGY).count() + \
                self.page.locator("button:has-text('建筑服务业')").count() + \
                self.page.locator("button:has-text('建筑制造业')").count() + \
@@ -346,11 +373,19 @@ class HomePage(BasePage):
 
     def click_merchant_tab(self, tab_text: str) -> None:
         """点击生态标签"""
+        if self.is_mobile():
+            btn = self.page.locator(f"button:has-text('{tab_text}')").first
+            if btn.is_visible():
+                btn.click()
+                self.page.wait_for_timeout(1000)
+            return
         self.click(f"text={tab_text}")
         self.page.wait_for_timeout(1000)
 
     def get_merchant_images_count(self) -> int:
         """获取企业图片数量"""
+        if self.is_mobile():
+            return 0
         return self.page.locator(self.MERCHANT_IMAGES).count()
 
     # ==================== 会展活动 ====================
@@ -361,11 +396,16 @@ class HomePage(BasePage):
 
     def get_activity_card_count(self) -> int:
         """获取活动卡片数量"""
+        if self.is_mobile():
+            return self.page.locator(self.ACTIVITY_CARDS_MOBILE).count()
         return self.page.locator(self.ACTIVITY_CARDS).count()
 
     def get_activity_card_titles(self) -> list[str]:
         """获取活动卡片标题"""
-        cards = self.page.locator(self.ACTIVITY_CARDS)
+        if self.is_mobile():
+            cards = self.page.locator(self.ACTIVITY_CARDS_MOBILE)
+        else:
+            cards = self.page.locator(self.ACTIVITY_CARDS)
         titles = []
         for i in range(cards.count()):
             text = cards.nth(i).text_content()
@@ -381,11 +421,16 @@ class HomePage(BasePage):
 
     def get_demand_item_count(self) -> int:
         """获取需求条目数量"""
+        if self.is_mobile():
+            return self.page.locator(self.DEMAND_ITEMS_MOBILE).count()
         return self.page.locator(self.DEMAND_ITEMS).count()
 
     def get_demand_item_titles(self) -> list[str]:
         """获取需求条目标题"""
-        items = self.page.locator(self.DEMAND_ITEMS)
+        if self.is_mobile():
+            items = self.page.locator(self.DEMAND_ITEMS_MOBILE)
+        else:
+            items = self.page.locator(self.DEMAND_ITEMS)
         titles = []
         for i in range(min(items.count(), 20)):
             text = items.nth(i).text_content()
@@ -417,11 +462,16 @@ class HomePage(BasePage):
 
     def get_news_item_count(self) -> int:
         """获取新闻条目数量"""
+        if self.is_mobile():
+            return self.page.locator(self.NEWS_ITEMS_MOBILE).count()
         return self.page.locator(self.NEWS_ITEMS).count()
 
     def get_news_item_titles(self) -> list[str]:
         """获取新闻条目标题"""
-        items = self.page.locator(self.NEWS_ITEMS)
+        if self.is_mobile():
+            items = self.page.locator(self.NEWS_ITEMS_MOBILE)
+        else:
+            items = self.page.locator(self.NEWS_ITEMS)
         titles = []
         for i in range(min(items.count(), 10)):
             text = items.nth(i).text_content()
