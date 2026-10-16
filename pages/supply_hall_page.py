@@ -54,7 +54,9 @@ class SupplyHallPage(BasePage):
         return self
 
     def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
+        """根据文本点击导航链接（支持 H5 抽屉导航）"""
+        # 先尝试打开抽屉（非移动端直接返回 False，不影响 web）
+        self._open_mobile_nav_if_needed()
         # 移动端导航项可能是 button 或 a，优先点击可见元素
         for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
             try:

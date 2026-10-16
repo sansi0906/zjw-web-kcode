@@ -121,17 +121,35 @@ class HomePage(BasePage):
     def get_nav_texts(self) -> list[str]:
         """获取所有导航链接文本"""
         if self.is_mobile():
+            # 移动端导航可能在抽屉内，先尝试展开
             self._open_mobile_nav_if_needed()
+            self.page.wait_for_timeout(300)
+            # 使用 JS 获取所有导航文本（包括不可见元素），避免 Playwright 可见性限制
+            try:
+                js_texts = self.page.evaluate("""() => {
+                    const sel = 'a, button, [role="button"]';
+                    const els = Array.from(document.querySelectorAll(sel));
+                    const texts = [];
+                    els.forEach(el => {
+                        const t = (el.textContent || '').trim();
+                        if (t && !texts.includes(t)) texts.push(t);
+                    });
+                    return texts;
+                }""")
+                if js_texts:
+                    return js_texts
+            except Exception:
+                pass
             nav_selectors = [
-                ".n-drawer a",
-                ".ant-drawer a",
-                ".drawer a",
-                "[class*='drawer'] a",
-                ".nav-collapse a",
-                ".mobile-nav a",
-                "nav a",
-                "header a",
-                ".nav a",
+                ".n-drawer a", ".n-drawer button",
+                ".ant-drawer a", ".ant-drawer button",
+                ".drawer a", ".drawer button",
+                "[class*='drawer'] a", "[class*='drawer'] button",
+                ".nav-collapse a", ".nav-collapse button",
+                ".mobile-nav a", ".mobile-nav button",
+                "nav a", "nav button",
+                "header a", "header button",
+                ".nav a", ".nav button",
                 self.NAV_ITEMS,
                 "button",
             ]
@@ -141,7 +159,15 @@ class HomePage(BasePage):
                     navs = self.page.locator(sel)
                     for i in range(navs.count()):
                         try:
-                            text = navs.nth(i).text_content()
+                            el = navs.nth(i)
+                            text = ""
+                            try:
+                                if el.is_visible(timeout=300):
+                                    text = el.text_content() or ""
+                                else:
+                                    text = el.get_attribute("textContent") or ""
+                            except Exception:
+                                text = el.get_attribute("textContent") or ""
                         except Exception:
                             continue
                         if text and text.strip():
@@ -185,6 +211,22 @@ class HomePage(BasePage):
                             return
                 except Exception:
                     continue
+            # 最后兜底：JS 点击不可见元素（移动端导航可能隐藏在抽屉中）
+            try:
+                self.page.evaluate(
+                    """(text) => {
+                    const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
+                    const el = els.find(e => (e.textContent||'').trim() === text);
+                    if (el) { el.click(); return true; }
+                    return false;
+                    }""",
+                    nav_text,
+                )
+                self.page.wait_for_timeout(1500)
+                self.wait_for_load()
+                return
+            except Exception:
+                pass
             self._close_mobile_nav_if_needed()
             return
         nav = self.page.locator(f"text={nav_text}").first
