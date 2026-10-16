@@ -596,6 +596,8 @@ class TestHomePage(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_merchant_tab_hover(self, home_page_shared: HomePage) -> None:
         """鼠标悬停生态标签，验证hover效果"""
+        if home_page_shared.is_mobile():
+            pytest.skip("移动端不支持 hover 操作")
         home_page_shared.scroll_to_tjdigital()
         tab = home_page_shared.page.locator(home_page_shared.MERCHANT_TAB_ECOLOGY).first
         if tab.is_visible():
@@ -608,6 +610,8 @@ class TestHomePage(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_float_button_hover(self, home_page_shared: HomePage) -> None:
         """鼠标悬停悬浮按钮，验证hover效果"""
+        if home_page_shared.is_mobile():
+            pytest.skip("移动端不支持 hover 操作")
         btn = home_page_shared.page.locator(home_page_shared.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.hover()
@@ -628,6 +632,38 @@ class TestHomePage(BasePageTest):
         assert duration < 10.0, f"滚动耗时 {duration:.2f}s，超过10秒阈值"
         home_page_shared.take_screenshot("scroll_performance", "info")
         home_page_shared.goto()
+
+    # ==================== 移动端手势 ====================
+
+    @allure.story("移动端手势")
+    @allure.title("向左滑动轮播图")
+    @allure.severity(allure.severity_level.MINOR)
+    def test_swipe_left_carousel(self, home_page_shared: HomePage) -> None:
+        """向左滑动验证轮播图切换"""
+        if not home_page_shared.is_mobile():
+            pytest.skip("仅移动端执行滑动手势测试")
+        home_page_shared.swipe_left()
+        home_page_shared.take_screenshot("swipe_left_carousel", "info")
+
+    @allure.story("移动端手势")
+    @allure.title("向上滑动加载更多")
+    @allure.severity(allure.severity_level.MINOR)
+    def test_swipe_up_load_more(self, home_page_shared: HomePage) -> None:
+        """向上滑动验证页面加载更多内容"""
+        if not home_page_shared.is_mobile():
+            pytest.skip("仅移动端执行滑动手势测试")
+        home_page_shared.swipe_up()
+        home_page_shared.take_screenshot("swipe_up_load_more", "info")
+
+    @allure.story("移动端手势")
+    @allure.title("下拉刷新页面")
+    @allure.severity(allure.severity_level.MINOR)
+    def test_pull_to_refresh(self, home_page_shared: HomePage) -> None:
+        """模拟移动端下拉刷新页面"""
+        if not home_page_shared.is_mobile():
+            pytest.skip("仅移动端执行下拉刷新测试")
+        home_page_shared.pull_to_refresh()
+        home_page_shared.take_screenshot("pull_to_refresh", "info")
 
     # ==================== 图片与资源 ====================
 

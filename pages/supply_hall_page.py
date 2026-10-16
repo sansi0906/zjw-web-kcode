@@ -9,6 +9,8 @@ from pages.base_page import BasePage
 class SupplyHallPage(BasePage):
     """供应大厅页面"""
 
+    PAGE_URL = "/supplyHall"
+
     # ==================== 顶部导航 ====================
     NAV_ITEMS = ".nav-left a, .header-title a, header a, nav a, .nav-item a"
 
@@ -41,6 +43,15 @@ class SupplyHallPage(BasePage):
         "div[class*='card']:not([class*='nav']):not([class*='header']):"
         "not([class*='footer']):not([class*='float'])"
     )
+    # 移动端商品卡片选择器（移动端为 button 网格布局）
+    PRODUCT_CARDS_MOBILE = (
+        "[class*='supply-item'], [class*='product-card'], "
+        "[class*='goods-card'], [class*='item-card'], "
+        "div[class*='card']:not([class*='nav']):not([class*='header']):"
+        "not([class*='footer']):not([class*='float']), "
+        ".n-carousel__slide, [class*='supply-card'], "
+        "button[class*='min-w-0'][class*='flex-1'][class*='aspect-']"
+    )
     VIEW_ALL_BTN = "text=查看全部"
 
     # ==================== 统计数据 ====================
@@ -67,6 +78,22 @@ class SupplyHallPage(BasePage):
                     return
             except Exception:
                 continue
+        # 最后兜底：JS 点击不可见元素（移动端导航可能隐藏在抽屉中）
+        try:
+            self.page.evaluate(
+                """(text) => {
+                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
+                const el = els.find(e => (e.textContent||'').trim() === text);
+                if (el) { el.click(); return true; }
+                return false;
+                }""",
+                nav_text,
+            )
+            self.page.wait_for_timeout(1500)
+            self.wait_for_load()
+            return
+        except Exception:
+            pass
 
     def get_nav_texts(self) -> list[str]:
         """获取所有导航链接文本"""
@@ -135,11 +162,16 @@ class SupplyHallPage(BasePage):
 
     def get_product_count(self) -> int:
         """获取商品/服务卡片数量"""
+        if self.is_mobile():
+            return self.page.locator(self.PRODUCT_CARDS_MOBILE).count()
         return self.page.locator(self.PRODUCT_CARDS).count()
 
     def get_supply_item_titles(self) -> list[str]:
         """获取所有商品/服务标题"""
-        cards = self.page.locator(self.PRODUCT_CARDS)
+        if self.is_mobile():
+            cards = self.page.locator(self.PRODUCT_CARDS_MOBILE)
+        else:
+            cards = self.page.locator(self.PRODUCT_CARDS)
         titles = []
         for i in range(min(cards.count(), 20)):
             title = cards.nth(i).text_content()
@@ -149,9 +181,16 @@ class SupplyHallPage(BasePage):
 
     def click_first_supply_item(self) -> None:
         """点击第一个供应商品"""
-        card = self.page.locator(self.PRODUCT_CARDS).first
+        if self.is_mobile():
+            card = self.page.locator(self.PRODUCT_CARDS_MOBILE).first
+        else:
+            card = self.page.locator(self.PRODUCT_CARDS).first
         if card.is_visible():
-            card.click()
+            try:
+                card.click()
+            except Exception:
+                # JS 点击兜底（移动端卡片可能被遮挡）
+                card.evaluate("el => el.click()")
             self.wait_for_load()
 
     def get_statistics(self) -> list[str]:
