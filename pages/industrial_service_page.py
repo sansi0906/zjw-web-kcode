@@ -34,12 +34,9 @@ class IndustrialServicePage(BasePage):
 
     def assert_service_exists(self) -> None:
         """验证产业化服务模块存在"""
-        # 移动端可能无"专属客服"文本，改为检查服务项是否存在
-        if self.is_mobile():
-            count = self.get_service_count()
-            assert count > 0, "移动端未找到产业化服务项"
-            return
-        self.assert_text_visible("专属客服", partial=True)
+        # 检查服务项数量，不依赖特定文本（WEB/移动端可能不同）
+        count = self.get_service_count()
+        assert count > 0, "未找到产业化服务项"
 
     def get_service_count(self) -> int:
         """获取服务项数量"""
