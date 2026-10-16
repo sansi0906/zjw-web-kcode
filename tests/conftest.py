@@ -174,6 +174,15 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     if request.config.getoption("--mobile"):
         platform = "h5"
 
+    # H5/mobile 平台未指定设备时，自动使用默认移动设备进行真正设备仿真
+    #（仅设置 viewport 不会触发移动端布局，需 isMobile/hasTouch/UA 等）
+    if platform in ("h5", "mobile") and not device_name:
+        default_device = PLAYWRIGHT_DEVICES.get("iPhone 12")
+        if default_device:
+            device_name = "iPhone 12"
+        else:
+            device_name = ""
+
     if device_name:
         device = PLAYWRIGHT_DEVICES.get(device_name)
         if device:
@@ -211,6 +220,14 @@ def shared_page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     platform = request.config.getoption("--platform") or settings.platform
     if request.config.getoption("--mobile"):
         platform = "h5"
+
+    # H5/mobile 平台未指定设备时，自动使用默认移动设备进行真正设备仿真
+    if platform in ("h5", "mobile") and not device_name:
+        default_device = PLAYWRIGHT_DEVICES.get("iPhone 12")
+        if default_device:
+            device_name = "iPhone 12"
+        else:
+            device_name = ""
 
     if device_name:
         device = PLAYWRIGHT_DEVICES.get(device_name)

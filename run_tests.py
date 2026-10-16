@@ -121,6 +121,9 @@ def run_tests(
     if platform in ("h5", "mobile"):
         viewport_width = 375
         viewport_height = 812
+        # H5/mobile 未指定设备时，自动使用默认移动设备进行真正设备仿真
+        if not device_name:
+            device_name = "iPhone 12"
     print("\n" + "=" * 60)
     print("开始运行测试...")
     print(f"环境: {env_name}")
