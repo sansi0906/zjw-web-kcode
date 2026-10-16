@@ -374,13 +374,6 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     if hasattr(item, "function") and item.function.__doc__:
         allure.dynamic.description(item.function.__doc__)
 
-    # H5 模式下跳过依赖顶部导航栏的用例（移动端使用抽屉菜单）
-    if settings.is_mobile:
-        test_name = item.name if hasattr(item, "name") else ""
-        node_id = item.nodeid if hasattr(item, "nodeid") else ""
-        if test_name.startswith("test_nav_") or "test_logo_click" in node_id:
-            pytest.skip("H5 模式下跳过顶部导航用例（移动端使用抽屉菜单，导航方式不同）")
-
 
 # ==================== 测试用例执行顺序 ====================
 

@@ -55,10 +55,16 @@ class SupplyHallPage(BasePage):
 
     def click_nav_by_text(self, nav_text: str) -> None:
         """根据文本点击导航链接"""
-        nav = self.page.locator(f"text={nav_text}").first
-        if nav.is_visible():
-            nav.click()
-            self.wait_for_load()
+        # 移动端导航项可能是 button 或 a，优先点击可见元素
+        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
+            try:
+                nav = self.page.locator(sel).first
+                if nav.is_visible(timeout=1500):
+                    nav.click()
+                    self.wait_for_load()
+                    return
+            except Exception:
+                continue
 
     def get_nav_texts(self) -> list[str]:
         """获取所有导航链接文本"""
