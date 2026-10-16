@@ -225,37 +225,16 @@ class BasePage:
         """根据文本点击导航链接（支持 H5 抽屉导航）"""
         if self.is_mobile():
             self._open_mobile_nav_if_needed()
-            # 在抽屉内查找
-            drawer_selectors = [
-                ".n-drawer",
-                ".ant-drawer",
-                ".drawer",
-                "[class*='drawer']",
-                ".nav-collapse",
-            ]
-            nav_found = False
-            for ds in drawer_selectors:
+            # 移动端导航项可能是 button 或 a，直接查找可见元素
+            for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
                 try:
-                    if self.page.locator(ds).first.is_visible(timeout=1000):
-                        link = self.page.locator(f"{ds} a:has-text('{nav_text}')").first
-                        if link.is_visible(timeout=1000):
-                            link.click()
-                            self.wait_for_load()
-                            return
-                        # fallback
-                        link = self.page.locator(f"{ds} >> text={nav_text}").first
-                        if link.is_visible(timeout=1000):
-                            link.click()
-                            self.wait_for_load()
-                            return
+                    nav = self.page.locator(sel).first
+                    if nav.is_visible(timeout=1500):
+                        nav.click()
+                        self.wait_for_load()
+                        return
                 except Exception:
                     continue
-            # 全局查找
-            nav = self.page.locator(f"a:has-text('{nav_text}')").first
-            if nav.is_visible(timeout=2000):
-                nav.click()
-                self.wait_for_load()
-                return
             self._close_mobile_nav_if_needed()
             return
 
@@ -322,12 +301,21 @@ class BasePage:
     # ==================== 断言辅助 ====================
 
     def assert_text_visible(self, text: str, partial: bool = True) -> None:
-        """断言页面包含指定文本"""
+        """断言页面包含指定文本（优先匹配可见元素）"""
         locator = self.page.locator(f"text={text}")
-        if partial:
-            expect(locator.first).to_be_visible(timeout=10000)
-        else:
-            expect(locator.first).to_have_text(text, timeout=10000)
+        count = locator.count()
+        for i in range(count):
+            el = locator.nth(i)
+            try:
+                if el.is_visible():
+                    if partial:
+                        expect(el).to_be_visible(timeout=10000)
+                    else:
+                        expect(el).to_have_text(text, timeout=10000)
+                    return
+            except Exception:
+                continue
+        raise AssertionError(f"页面未找到可见文本: {text}")
 
     def assert_url_contains(self, fragment: str) -> None:
         """断言 URL 包含指定片段"""

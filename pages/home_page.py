@@ -133,6 +133,7 @@ class HomePage(BasePage):
                 "header a",
                 ".nav a",
                 self.NAV_ITEMS,
+                "button",
             ]
             texts = []
             for sel in nav_selectors:
@@ -163,7 +164,17 @@ class HomePage(BasePage):
         """根据文本点击导航链接"""
         if self.is_mobile():
             self._open_mobile_nav_if_needed()
-            # 优先在抽屉内查找
+            # 移动端导航项可能是 button 或 a，直接查找可见元素
+            for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
+                try:
+                    nav = self.page.locator(sel).first
+                    if nav.is_visible(timeout=1500):
+                        nav.click()
+                        self.wait_for_load()
+                        return
+                except Exception:
+                    continue
+            # 优先在抽屉内查找（作为兜底）
             for ds in [".n-drawer", ".ant-drawer", ".drawer", "[class*='drawer']", ".nav-collapse"]:
                 try:
                     if self.page.locator(ds).first.is_visible(timeout=800):
@@ -174,11 +185,6 @@ class HomePage(BasePage):
                             return
                 except Exception:
                     continue
-            nav = self.page.locator(f"a:has-text('{nav_text}')").first
-            if nav.is_visible(timeout=1500):
-                nav.click()
-                self.wait_for_load()
-                return
             self._close_mobile_nav_if_needed()
             return
         nav = self.page.locator(f"text={nav_text}").first
