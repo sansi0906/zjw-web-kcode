@@ -38,6 +38,16 @@ class BasePage:
         except Exception:
             pass
         # 直接从当前进程的 config? 简单处理：从 settings 和 page 判断
+        self._platform = settings.platform
+        self._is_mobile = settings.is_mobile
+
+    def is_mobile(self) -> bool:
+        """判断是否为移动端/H5 平台"""
+        return bool(self._is_mobile or settings.is_mobile)
+
+    def platform(self) -> str:
+        """获取当前平台：web / h5 / mobile"""
+        return self._platform or settings.platform
 
     # ==================== 导航与等待 ====================
 
@@ -182,13 +192,23 @@ class BasePage:
             ".nav-toggle",
             "[class*='hamburger']",
             "button[class*='menu']",
+            "[class*='burger']",
+            ".menu-btn",
+            ".nav-menu-btn",
+            ".mobile-menu-toggle",
+            "[class*='navbar-toggle']",
+            ".header-menu",
+            "button:has-text('菜单')",
+            "button:has-text('≡')",
+            "[class*='mobile-nav-toggle']",
+            "[class*='drawer-toggle']",
         ]
         for sel in hamburger_selectors:
             try:
                 btn = self.page.locator(sel).first
                 if btn.is_visible(timeout=1000):
                     btn.click()
-                    self.page.wait_for_timeout(500)
+                    self.page.wait_for_timeout(800)
                     return True
             except Exception:
                 continue
@@ -224,8 +244,9 @@ class BasePage:
     def click_nav_by_text(self, nav_text: str) -> None:
         """根据文本点击导航链接（支持 H5 抽屉导航）"""
         if self.is_mobile():
+            # 先尝试打开抽屉（若导航项在抽屉内）
             self._open_mobile_nav_if_needed()
-            # 移动端导航项可能是 button 或 a，直接查找可见元素
+            # 在抽屉内及全局查找可见的导航项（button 或 a）
             for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
                 try:
                     nav = self.page.locator(sel).first
