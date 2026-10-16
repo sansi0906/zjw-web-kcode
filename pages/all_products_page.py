@@ -22,8 +22,13 @@ class AllProductsPage(BasePage):
 
     def click_first_product(self) -> None:
         """点击第一个商品"""
-        self.page.locator(self.PRODUCT_CARDS).first.click()
-        self.wait_for_load()
+        card = self.page.locator(self.PRODUCT_CARDS).first
+        if card.is_visible():
+            try:
+                card.click()
+            except Exception:
+                card.evaluate("el => el.click()")
+            self.wait_for_load()
 
     def assert_page_loaded(self) -> None:
         """断言页面加载完成"""

@@ -200,7 +200,23 @@ class IndustryDemandPage(BasePage):
             assert "/industryDemand" in self.page.url, \
                 f"URL 不包含 industryDemand，实际: {self.page.url}"
             return
-        self.assert_text_visible("首页", partial=True)
+        # WEB 端：滚动页面寻找产业需求区域
+        try:
+            self.assert_text_visible("产业需求", partial=True)
+            return
+        except AssertionError:
+            pass
+        for _ in range(6):
+            self.page.evaluate("window.scrollBy(0, 400)")
+            self.page.wait_for_timeout(500)
+            try:
+                self.assert_text_visible("产业需求", partial=True)
+                return
+            except AssertionError:
+                continue
+        # 最后兜底：检查需求卡片是否存在
+        count = self.get_demand_count()
+        assert count > 0, "未找到产业需求区域或需求卡片"
 
     def assert_demands_exist(self, min_count: int = 1) -> None:
         """断言需求卡片存在"""
