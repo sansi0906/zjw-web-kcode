@@ -111,13 +111,24 @@ def run_tests(
     headless: bool = False,
     parallel: int = 1,
     run_dir: str = "",
+    platform: str = "web",
+    device_name: str = "",
+    mobile: bool = False,
 ) -> tuple[int, str]:
     """运行测试，返回 (exit_code, run_dir)"""
+    if mobile:
+        platform = "h5"
+    if platform in ("h5", "mobile"):
+        viewport_width = 375
+        viewport_height = 812
     print("\n" + "=" * 60)
     print("开始运行测试...")
     print(f"环境: {env_name}")
     print(f"测试地址: {test_url or settings.env_config.base_url}")
-    print(f"视口: {viewport_width}x{viewport_height}")
+    if device_name:
+        print(f"设备: {device_name} (platform={platform})")
+    else:
+        print(f"视口: {viewport_width}x{viewport_height}")
     print(f"无头模式: {headless}")
     print(f"并行数: {parallel}")
     if screenshot_all:
@@ -160,6 +171,12 @@ def run_tests(
         cmd.append("--headless")
     if parallel > 1:
         cmd.extend(["-n", str(parallel)])
+    if platform:
+        cmd.extend(["--platform", platform])
+    if device_name:
+        cmd.extend(["--device-name", device_name])
+    if mobile:
+        cmd.append("--mobile")
 
     # 运行测试
     result = subprocess.run(cmd, cwd=os.path.dirname(__file__), env=env)
@@ -355,6 +372,12 @@ def main() -> int:
                         help="测试环境，默认 dev")
     parser.add_argument("--headless", action="store_true", default=False,
                         help="无头模式运行")
+    parser.add_argument("--platform", default=None, choices=["web", "h5", "mobile"],
+                        help="运行平台: web / h5 / mobile")
+    parser.add_argument("--device-name", default="",
+                        help="Playwright 设备名称（如 'iPhone 12', 'iPhone 12 Pro', 'Pixel 5'）")
+    parser.add_argument("--mobile", action="store_true", default=False,
+                        help="等价于 --platform h5（快捷参数）")
     parser.add_argument("--parallel", type=int, default=1,
                         help="并行运行数，默认1（不并行）")
 
@@ -386,6 +409,9 @@ def main() -> int:
         env_name=args.env,
         headless=args.headless,
         parallel=args.parallel,
+        platform=args.platform,
+        device_name=args.device_name,
+        mobile=args.mobile,
     )
 
     report_file = generate_html_report(

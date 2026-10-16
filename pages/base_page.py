@@ -24,6 +24,20 @@ class BasePage:
         screenshot_dir = os.environ.get("SCREENSHOT_DIR", settings.screenshots_dir)
         self.screenshots_dir = Path(screenshot_dir)
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+        # 尝试从 pytest request 获取平台信息
+        try:
+            import pytest
+            # request 挂在 page.context? 不直接，conftest 存在 config._platform_info
+            cfg = pytest.current_config if hasattr(pytest, 'current_config') else None
+        except Exception:
+            cfg = None
+        self._platform_info = None
+        try:
+            # conftest 设置 request.config._platform_info
+            from tests import conftest  # type: ignore
+        except Exception:
+            pass
+        # 直接从当前进程的 config? 简单处理：从 settings 和 page 判断
 
     # ==================== 导航与等待 ====================
 
@@ -156,15 +170,99 @@ class BasePage:
 
     # ==================== 通用方法（子类可覆盖） ====================
 
-    def get_nav_texts(self) -> list[str]:
-        """获取导航链接文本（默认实现）"""
-        navs = self.page.locator("nav a, header a, .nav a")
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        return texts
+    def _open_mobile_nav_if_needed(self) -> bool:
+        """H5：如导航在抽屉中，尝试展开汉堡菜单"""
+        if not self.is_mobile():
+            return False
+        hamburger_selectors = [
+            ".hamburger",
+            "button[aria-label*='菜单']",
+            "button[aria-label*='menu']",
+            "[class*='menu-toggle']",
+            ".nav-toggle",
+            "[class*='hamburger']",
+            "button[class*='menu']",
+        ]
+        for sel in hamburger_selectors:
+            try:
+                btn = self.page.locator(sel).first
+                if btn.is_visible(timeout=1000):
+                    btn.click()
+                    self.page.wait_for_timeout(500)
+                    return True
+            except Exception:
+                continue
+        return False
+
+    def _close_mobile_nav_if_needed(self) -> bool:
+        """H5：尝试关闭抽屉/导航"""
+        if not self.is_mobile():
+            return False
+        close_selectors = [
+            ".n-drawer__close",
+            ".ant-drawer-close",
+            "button[aria-label*='关闭']",
+            "[class*='drawer-close']",
+            ".drawer-close",
+        ]
+        for sel in close_selectors:
+            try:
+                btn = self.page.locator(sel).first
+                if btn.is_visible(timeout=1000):
+                    btn.click()
+                    self.page.wait_for_timeout(300)
+                    return True
+            except Exception:
+                continue
+        try:
+            self.page.keyboard.press("Escape")
+            self.page.wait_for_timeout(300)
+            return True
+        except Exception:
+            return False
+
+    def click_nav_by_text(self, nav_text: str) -> None:
+        """根据文本点击导航链接（支持 H5 抽屉导航）"""
+        if self.is_mobile():
+            self._open_mobile_nav_if_needed()
+            # 在抽屉内查找
+            drawer_selectors = [
+                ".n-drawer",
+                ".ant-drawer",
+                ".drawer",
+                "[class*='drawer']",
+                ".nav-collapse",
+            ]
+            nav_found = False
+            for ds in drawer_selectors:
+                try:
+                    if self.page.locator(ds).first.is_visible(timeout=1000):
+                        link = self.page.locator(f"{ds} a:has-text('{nav_text}')").first
+                        if link.is_visible(timeout=1000):
+                            link.click()
+                            self.wait_for_load()
+                            return
+                        # fallback
+                        link = self.page.locator(f"{ds} >> text={nav_text}").first
+                        if link.is_visible(timeout=1000):
+                            link.click()
+                            self.wait_for_load()
+                            return
+                except Exception:
+                    continue
+            # 全局查找
+            nav = self.page.locator(f"a:has-text('{nav_text}')").first
+            if nav.is_visible(timeout=2000):
+                nav.click()
+                self.wait_for_load()
+                return
+            self._close_mobile_nav_if_needed()
+            return
+
+        nav = self.page.locator(f"text={nav_text}").first
+        if nav.is_visible():
+            nav.click()
+            self.wait_for_load()
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""

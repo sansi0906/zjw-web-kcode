@@ -120,6 +120,37 @@ class HomePage(BasePage):
 
     def get_nav_texts(self) -> list[str]:
         """获取所有导航链接文本"""
+        if self.is_mobile():
+            self._open_mobile_nav_if_needed()
+            nav_selectors = [
+                ".n-drawer a",
+                ".ant-drawer a",
+                ".drawer a",
+                "[class*='drawer'] a",
+                ".nav-collapse a",
+                ".mobile-nav a",
+                "nav a",
+                "header a",
+                ".nav a",
+                self.NAV_ITEMS,
+            ]
+            texts = []
+            for sel in nav_selectors:
+                try:
+                    navs = self.page.locator(sel)
+                    for i in range(navs.count()):
+                        try:
+                            text = navs.nth(i).text_content()
+                        except Exception:
+                            continue
+                        if text and text.strip():
+                            t = text.strip()
+                            if t and t not in texts:
+                                texts.append(t)
+                except Exception:
+                    continue
+            return texts
+
         navs = self.page.locator(self.NAV_ITEMS)
         texts = []
         for i in range(navs.count()):
@@ -130,6 +161,26 @@ class HomePage(BasePage):
 
     def click_nav_by_text(self, nav_text: str) -> None:
         """根据文本点击导航链接"""
+        if self.is_mobile():
+            self._open_mobile_nav_if_needed()
+            # 优先在抽屉内查找
+            for ds in [".n-drawer", ".ant-drawer", ".drawer", "[class*='drawer']", ".nav-collapse"]:
+                try:
+                    if self.page.locator(ds).first.is_visible(timeout=800):
+                        link = self.page.locator(f"{ds} a:has-text('{nav_text}')").first
+                        if link.is_visible(timeout=1000):
+                            link.click()
+                            self.wait_for_load()
+                            return
+                except Exception:
+                    continue
+            nav = self.page.locator(f"a:has-text('{nav_text}')").first
+            if nav.is_visible(timeout=1500):
+                nav.click()
+                self.wait_for_load()
+                return
+            self._close_mobile_nav_if_needed()
+            return
         nav = self.page.locator(f"text={nav_text}").first
         if nav.is_visible():
             nav.click()
