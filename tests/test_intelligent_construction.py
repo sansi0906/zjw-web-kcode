@@ -71,3 +71,56 @@ class TestIntelligentConstruction(BasePageTest):
         self.page_obj.open()
         self.page_obj.click_view_all()
         self.page_obj.take_screenshot("view_all", "info")
+
+    # ==================== 分页测试 ===================
+
+    @allure.story("分页")
+    @allure.title("分页跳转")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_pagination_jump(self) -> None:
+        """测试分页跳转功能"""
+        self.page_obj.open()
+        self.page_obj.go_to_page(2)
+        self.page_obj.take_screenshot("pagination_jump", "info")
+
+    # ==================== 申报入口测试 ===================
+
+    @allure.story("申报入口")
+    @allure.title("智能建造新技术新产品申报")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_declaration_new_tech(self) -> None:
+        """点击智能建造新技术新产品申报"""
+        self.page_obj.open()
+        self.page_obj.click_new_tech_declaration()
+        self.page_obj.take_screenshot("declaration_new_tech", "info")
+
+    @allure.story("申报入口")
+    @allure.title("智能建造种子企业申报")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_declaration_seed_enterprise(self) -> None:
+        """点击智能建造种子企业申报"""
+        self.page_obj.open()
+        self.page_obj.click_seed_enterprise_declaration()
+        self.page_obj.take_screenshot("declaration_seed_enterprise", "info")
+
+    # ==================== 标准规范测试 ===================
+
+    @allure.story("标准规范")
+    @allure.title("查看京津冀标准")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_view_standard_京津冀(self) -> None:
+        """查看京津冀智能建造技术规程"""
+        self.page_obj.open()
+        self.page_obj.view_standard("京津冀")
+        self.page_obj.take_screenshot("standard_jjj", "info")
+
+    # ==================== 平台产品测试 ===================
+
+    @allure.story("平台产品")
+    @allure.title("查看BIM产品")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_view_bim_product(self) -> None:
+        """查看基于BIM的挂篮设计软件"""
+        self.page_obj.open()
+        self.page_obj.view_platform("BIM")
+        self.page_obj.take_screenshot("product_bim", "info")

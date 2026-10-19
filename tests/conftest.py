@@ -32,6 +32,7 @@ from pages.industry_demand_page import IndustryDemandPage  # noqa: E402
 from pages.industry_news_page import IndustryNewsPage  # noqa: E402
 from pages.key_project_page import KeyProjectsPage  # noqa: E402
 from pages.supply_hall_page import SupplyHallPage  # noqa: E402
+from pages.demand_page import DemandPage  # noqa: E402
 from pages.all_products_page import AllProductsPage  # noqa: E402
 from pages.intelligent_construction_page import IntelligentConstructionPage  # noqa: E402
 from pages.industry_policy_page import IndustryPolicyPage  # noqa: E402
@@ -278,6 +279,7 @@ _PAGE_FIXTURES = [
     ("home_page", HomePage, "function", "page"),
     ("home_page_shared", HomePage, "module", "shared_page"),
     ("supply_hall_page", SupplyHallPage, "function", "page"),
+    ("demand_page", DemandPage, "function", "page"),
     ("industry_demand_page", IndustryDemandPage, "function", "page"),
     ("key_projects_page", KeyProjectsPage, "function", "page"),
     ("industry_news_page", IndustryNewsPage, "function", "page"),

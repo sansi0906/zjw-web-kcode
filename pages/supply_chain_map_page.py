@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import pytest
+
 from config.settings import settings
 from pages.base_page import BasePage
 
@@ -65,7 +67,6 @@ class SupplyChainMapPage(BasePage):
         """获取区域数量"""
         self.scroll_to_map()
         if self.is_mobile():
-            import pytest
             pytest.skip("移动端可能无区域数据")
         # WEB 端：先检查是否有供应链地图模块
         map_els = self.page.locator("*:has-text('供应链地图')")
@@ -78,7 +79,6 @@ class SupplyChainMapPage(BasePage):
             except Exception:
                 continue
         if not visible_map:
-            import pytest
             pytest.skip("WEB 端首页未展示供应链地图模块")
         count = 0
         for region_name in self.REGION_NAMES:
@@ -104,7 +104,6 @@ class SupplyChainMapPage(BasePage):
         self.scroll_to_map()
         if self.is_mobile():
             # 移动端可能无供应链地图模块，跳过
-            import pytest
             pytest.skip("移动端可能无供应链地图模块")
         # 检查是否有供应链地图相关元素
         map_els = self.page.locator("*:has-text('供应链地图')")
@@ -117,7 +116,6 @@ class SupplyChainMapPage(BasePage):
             except Exception:
                 continue
         if not visible_map:
-            import pytest
             pytest.skip("WEB 端首页未展示供应链地图模块")
         count = self.get_region_count()
         assert count > 0, "未找到供应链地图区域数据"
@@ -127,10 +125,8 @@ class SupplyChainMapPage(BasePage):
         self.scroll_to_map()
         tabs = self.get_category_tabs()
         if self.is_mobile() and len(tabs) == 0:
-            import pytest
             pytest.skip("移动端可能无供应链地图分类标签")
         if len(tabs) == 0:
-            import pytest
             pytest.skip("WEB 端首页未展示供应链地图分类标签")
         assert len(tabs) > 0, "未找到供应链地图分类标签"
 
@@ -150,7 +146,6 @@ class SupplyChainMapPage(BasePage):
             except Exception:
                 continue
         if not visible_map:
-            import pytest
             pytest.skip("WEB 端首页未展示供应链地图模块")
         self.assert_text_visible("供应链地图", partial=True)
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.key_project_page import KeyProjectsPage
@@ -60,3 +61,66 @@ class TestKeyProjects(BasePageTest):
         """点击查看全部按钮跳转到项目列表页"""
         self.page_obj.open()
         self.page_obj.click_view_all()
+
+    # ==================== 发布操作测试 ===================
+
+    @allure.story("发布操作")
+    @allure.title("发布项目按钮")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_publish_project(self) -> None:
+        """点击发布项目按钮"""
+        self.page_obj.open()
+        self.page_obj.click_publish_project()
+        self.page_obj.take_screenshot("publish_project", "info")
+
+    @allure.story("发布操作")
+    @allure.title("发布需求按钮")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_publish_demand(self) -> None:
+        """点击发布需求按钮"""
+        self.page_obj.open()
+        self.page_obj.click_publish_demand()
+        self.page_obj.take_screenshot("publish_demand", "info")
+
+    # ==================== 分类筛选测试 ===================
+
+    @allure.story("分类筛选")
+    @allure.title("房建项目筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_房建项目(self) -> None:
+        """筛选房建项目"""
+        self.page_obj.open()
+        self.page_obj.click_filter("房建项目")
+        self.page_obj.assert_filter_works("房建项目")
+        self.page_obj.take_screenshot("filter_房建项目", "info")
+
+    @allure.story("分类筛选")
+    @allure.title("市政项目筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_市政项目(self) -> None:
+        """筛选市政项目"""
+        self.page_obj.open()
+        self.page_obj.click_filter("市政项目")
+        self.page_obj.assert_filter_works("市政项目")
+        self.page_obj.take_screenshot("filter_市政项目", "info")
+
+    @allure.story("分类筛选")
+    @allure.title("其他项目筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_其他项目(self) -> None:
+        """筛选其他项目"""
+        self.page_obj.open()
+        self.page_obj.click_filter("其他项目")
+        self.page_obj.assert_filter_works("其他项目")
+        self.page_obj.take_screenshot("filter_其他项目", "info")
+
+    # ==================== 分页测试 ===================
+
+    @allure.story("分页")
+    @allure.title("分页跳转")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_pagination_jump(self) -> None:
+        """测试分页跳转功能"""
+        self.page_obj.open()
+        self.page_obj.jump_to_page(2)
+        self.page_obj.take_screenshot("pagination", "info")

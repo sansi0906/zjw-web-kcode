@@ -146,3 +146,101 @@ class TestSupplyHall(BasePageTest):
         self.page_obj.click_nav_by_text("重点项目")
         self.page_obj.assert_url_contains("keyProject")
         self.page_obj.take_screenshot("nav_key_project", "info")
+
+    # ==================== 分类筛选 ===================
+
+    @allure.story("分类筛选")
+    @allure.title("建筑材料分类筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_建筑材料(self) -> None:
+        """点击建筑材料分类"""
+        self.page_obj.open()
+        self.page_obj.click_category("建筑材料")
+        self.page_obj.take_screenshot("filter_建筑材料", "info")
+
+    @allure.story("分类筛选")
+    @allure.title("水电暖通分类筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_水电暖通(self) -> None:
+        """点击水电暖通分类"""
+        self.page_obj.open()
+        self.page_obj.click_category("水电暖通")
+        self.page_obj.take_screenshot("filter_水电暖通", "info")
+
+    @allure.story("分类筛选")
+    @allure.title("机械设备分类筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_机械设备(self) -> None:
+        """点击机械设备分类"""
+        self.page_obj.open()
+        self.page_obj.click_category("机械设备")
+        self.page_obj.take_screenshot("filter_机械设备", "info")
+
+    @allure.story("分类筛选")
+    @allure.title("工程机械分类筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_工程机械(self) -> None:
+        """点击工程机械分类"""
+        self.page_obj.open()
+        self.page_obj.click_category("工程机械")
+        self.page_obj.take_screenshot("filter_工程机械", "info")
+
+    @allure.story("分类筛选")
+    @allure.title("劳务用工分类筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_劳务用工(self) -> None:
+        """点击劳务用工分类"""
+        self.page_obj.open()
+        self.page_obj.click_category("劳务用工")
+        self.page_obj.take_screenshot("filter_劳务用工", "info")
+
+    # ==================== 子分类筛选 ===================
+
+    @allure.story("子分类筛选")
+    @allure.title("土建子分类筛选")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_filter_sub_土建(self) -> None:
+        """点击土建子分类"""
+        self.page_obj.open()
+        self.page_obj.click_subcategory("土建")
+        self.page_obj.take_screenshot("filter_sub_土建", "info")
+
+    @allure.story("子分类筛选")
+    @allure.title("装饰装修子分类筛选")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_filter_sub_装饰装修(self) -> None:
+        """点击装饰装修子分类"""
+        self.page_obj.open()
+        self.page_obj.click_subcategory("装饰装修")
+        self.page_obj.take_screenshot("filter_sub_装饰装修", "info")
+
+    @allure.story("子分类筛选")
+    @allure.title("电气子分类筛选")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_filter_sub_电气(self) -> None:
+        """点击电气子分类"""
+        self.page_obj.open()
+        self.page_obj.click_subcategory("电气")
+        self.page_obj.take_screenshot("filter_sub_电气", "info")
+
+    # ==================== 搜索功能 ===================
+
+    @allure.story("搜索")
+    @allure.title("搜索商品")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_search(self) -> None:
+        """输入关键词搜索商品"""
+        self.page_obj.open()
+        self.page_obj.fill_search("钢筋")
+        self.page_obj.click_search()
+        self.page_obj.take_screenshot("search", "info")
+
+    @allure.story("搜索")
+    @allure.title("重置搜索")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_reset(self) -> None:
+        """测试重置按钮"""
+        self.page_obj.open()
+        self.page_obj.fill_search("钢筋")
+        self.page_obj.click_reset()
+        self.page_obj.take_screenshot("reset", "info")
