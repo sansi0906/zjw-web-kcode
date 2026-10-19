@@ -3,6 +3,8 @@
 """
 from __future__ import annotations
 
+import pytest
+
 from pages.base_page import BasePage
 
 
@@ -35,6 +37,31 @@ class SupplyHallPage(BasePage):
     FOOTER_SERVICE_PHONE = "text=400-115-0629"
     FOOTER_ICP = "text=津ICP备"
     FOOTER_SECURITY = "text=津公网"
+
+    # ==================== 分类筛选 ====================
+    # 主分类
+    CAT_建筑材料 = "text=建筑材料"
+    CAT_水电暖通 = "text=水电暖通"
+    CAT_机械设备 = "text=机械设备"
+    CAT_工程机械 = "text=工程机械"
+    CAT_劳务用工 = "text=劳务用工"
+
+    # 子分类
+    CAT_土建 = "text=土建"
+    CAT_装饰装修 = "text=装饰装修"
+    CAT_给排水 = "text=给排水"
+    CAT_电气 = "text=电气"
+    CAT_智能设备 = "text=智能设备"
+    CAT_专业设备 = "text=专业设备"
+    CAT_起重机械 = "text=起重机械"
+    CAT_混凝土机械 = "text=混凝土机械"
+    CAT_人机协同班组 = "text=人机协同班组"
+    CAT_建筑工人 = "text=建筑工人"
+
+    # 搜索
+    SEARCH_INPUT = "input[type='text']"
+    SEARCH_BTN = "text=搜索"
+    RESET_BTN = "text=重置"
 
     # ==================== 商品卡片 ====================
     PRODUCT_CARDS = (
@@ -115,6 +142,101 @@ class SupplyHallPage(BasePage):
         if btn.is_visible():
             btn.click()
             self.wait_for_load()
+
+    # ==================== 分类筛选操作 ====================
+
+    def click_category(self, cat_name: str) -> None:
+        """点击主分类"""
+        cat_map = {
+            "建筑材料": self.CAT_建筑材料,
+            "水电暖通": self.CAT_水电暖通,
+            "机械设备": self.CAT_机械设备,
+            "工程机械": self.CAT_工程机械,
+            "劳务用工": self.CAT_劳务用工,
+        }
+        sel = cat_map.get(cat_name)
+        if sel:
+            el = self.page.locator(sel).first
+            if el.is_visible(timeout=3000):
+                try:
+                    el.click(timeout=5000)
+                except Exception:
+                    self._js_click_by_text(cat_name)
+                self.page.wait_for_timeout(1000)
+            else:
+                self._js_click_by_text(cat_name)
+
+    def click_subcategory(self, sub_name: str) -> None:
+        """点击子分类"""
+        sub_map = {
+            "土建": self.CAT_土建,
+            "装饰装修": self.CAT_装饰装修,
+            "给排水": self.CAT_给排水,
+            "电气": self.CAT_电气,
+            "智能设备": self.CAT_智能设备,
+            "专业设备": self.CAT_专业设备,
+            "起重机械": self.CAT_起重机械,
+            "混凝土机械": self.CAT_混凝土机械,
+            "人机协同班组": self.CAT_人机协同班组,
+            "建筑工人": self.CAT_建筑工人,
+        }
+        sel = sub_map.get(sub_name)
+        if sel:
+            el = self.page.locator(sel).first
+            if el.is_visible(timeout=3000):
+                try:
+                    el.click(timeout=5000)
+                except Exception:
+                    self._js_click_by_text(sub_name)
+                self.page.wait_for_timeout(1000)
+            else:
+                self._js_click_by_text(sub_name)
+
+    def _js_click_by_text(self, text: str) -> None:
+        """通过文本内容用 JS 点击元素"""
+        try:
+            self.page.evaluate(
+                """(text) => {
+                const els = Array.from(document.querySelectorAll('*'));
+                const el = els.find(e => (e.textContent||'').trim() === text);
+                if (el) { el.click(); return true; }
+                return false;
+                }""",
+                text,
+            )
+            self.page.wait_for_timeout(1000)
+        except Exception:
+            pass
+
+    def get_category_count(self) -> int:
+        """获取主分类数量"""
+        cats = [self.CAT_建筑材料, self.CAT_水电暖通, self.CAT_机械设备,
+                self.CAT_工程机械, self.CAT_劳务用工]
+        count = 0
+        for sel in cats:
+            if self.page.locator(sel).first.is_visible():
+                count += 1
+        return count
+
+    def fill_search(self, text: str) -> None:
+        """输入搜索关键词"""
+        el = self.page.locator(self.SEARCH_INPUT).first
+        if el.is_visible():
+            el.fill(text)
+
+    def click_search(self) -> None:
+        """点击搜索按钮"""
+        btn = self.page.locator(self.SEARCH_BTN).first
+        if btn.is_visible():
+            btn.click()
+            self.page.wait_for_timeout(1000)
+
+    def click_reset(self) -> None:
+        """点击重置按钮"""
+        btn = self.page.locator(self.RESET_BTN).first
+        if btn.is_visible():
+            btn.click()
+            self.page.wait_for_timeout(1000)
 
     def click_publish(self) -> None:
         """点击发布商品按钮"""
@@ -219,9 +341,7 @@ class SupplyHallPage(BasePage):
                 return
         product_count = self.page.locator(self.PRODUCT_CARDS).count()
         if product_count == 0:
-            import pytest
             pytest.skip("未找到供应商品卡片，跳过价格检查")
-        import pytest
         pytest.skip(f"找到 {product_count} 个供应商品但未找到价格元素，可能为环境数据问题")
 
     def has_pagination(self) -> bool:

@@ -306,18 +306,21 @@ def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
 
     print(f"BUG 清单已生成: {bug_file}")
     return bug_file
+
+
+def open_report(run_dir: str) -> None:
     """使用 allure serve 打开报告"""
     import webbrowser
     import subprocess
     import time
-    
+
     allure_results = os.path.join(run_dir, "allure-results")
     if not os.path.exists(allure_results):
         print("Allure 结果目录不存在，跳过打开报告")
         return
-    
+
     print(f"\n正在启动 Allure 服务: {allure_results}")
-    
+
     # 启动 allure serve
     try:
         proc = subprocess.Popen(
@@ -328,7 +331,7 @@ def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
         )
         # 等待服务启动
         time.sleep(3)
-        
+
         # 尝试打开浏览器
         webbrowser.open("http://localhost:8080")
         print(f"Allure 服务已启动，浏览器访问: http://localhost:8080")

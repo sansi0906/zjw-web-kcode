@@ -53,6 +53,14 @@ class IndustryAssociationPage(BasePage):
 
     # ==================== 页面操作 ====================
 
+    # 搜索
+    SEARCH_INPUT = "input[type='text']"
+    SEARCH_BTN = "text=搜索"
+    RESET_BTN = "text=重置"
+
+    # 分页
+    PAGINATION_INPUT = "input[type='text']"
+
     def open(self) -> "IndustryAssociationPage":
         """打开产业协会页面"""
         base = settings.env_config.base_url.rstrip("/")
@@ -65,6 +73,37 @@ class IndustryAssociationPage(BasePage):
         if btn.is_visible():
             btn.click()
             self.wait_for_load()
+
+    def fill_search(self, text: str) -> None:
+        """输入搜索关键词"""
+        el = self.page.locator(self.SEARCH_INPUT).first
+        if el.is_visible():
+            el.fill(text)
+
+    def click_search(self) -> None:
+        """点击搜索按钮"""
+        btn = self.page.locator(self.SEARCH_BTN).first
+        if btn.is_visible():
+            btn.click()
+            self.page.wait_for_timeout(1000)
+
+    def click_reset(self) -> None:
+        """点击重置按钮"""
+        btn = self.page.locator(self.RESET_BTN).first
+        if btn.is_visible():
+            btn.click()
+            self.page.wait_for_timeout(1000)
+
+    def jump_to_page(self, page_num: int) -> None:
+        """跳转到指定页"""
+        try:
+            inp = self.page.locator(self.PAGINATION_INPUT).first
+            if inp.is_visible():
+                inp.fill(str(page_num))
+                inp.press("Enter")
+                self.wait_for_load()
+        except Exception:
+            pass
 
     # ==================== 导航操作 ====================
 

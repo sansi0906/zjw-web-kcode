@@ -1,4 +1,7 @@
-"""全部商品模块测试"""
+"""全部商品模块测试 - 已废弃
+
+改版后首页不再展示"全部商品"模块，此文件保留仅作历史参考。
+"""
 from __future__ import annotations
 
 import allure
@@ -9,14 +12,13 @@ from pages.all_products_page import AllProductsPage
 from utils.browser_helpers import click_and_wait_for_new_page
 
 
+@pytest.mark.skip(reason="改版后首页无全部商品模块，已废弃")
 @allure.feature("全部商品页面")
 class TestAllProducts(BasePageTest):
-    """全部商品测试类"""
+    """全部商品测试类 - 已废弃"""
 
     page_name = "全部商品"
     page_fixture_name = "all_products_page"
-
-    # ==================== 商品展示测试 ===================
 
     @allure.story("商品展示")
     @allure.title("商品卡片展示")
@@ -52,8 +54,6 @@ class TestAllProducts(BasePageTest):
                 except Exception:
                     continue
         assert loaded_count > 0, f"没有图片加载成功，检查了{min(images.count(), 10)}张图片"
-
-    # ==================== 商品交互测试 ===================
 
     @allure.story("商品交互")
     @allure.title("商品卡片点击")

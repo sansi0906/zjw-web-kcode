@@ -71,3 +71,38 @@ class TestIndustryAssociation(BasePageTest):
         self.page_obj.open()
         self.page_obj.click_view_all()
         self.page_obj.take_screenshot("view_all", "info")
+
+    # ==================== 协会入驻测试 ===================
+
+    @allure.story("协会入驻")
+    @allure.title("协会入驻筛选")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_filter_协会入驻(self) -> None:
+        """筛选协会入驻"""
+        self.page_obj.open()
+        self.page_obj.click_filter("协会入驻")
+        self.page_obj.assert_filter_works("协会入驻")
+        self.page_obj.take_screenshot("filter_协会入驻", "info")
+
+    # ==================== 搜索测试 ===================
+
+    @allure.story("搜索")
+    @allure.title("搜索协会")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_search(self) -> None:
+        """搜索协会"""
+        self.page_obj.open()
+        self.page_obj.fill_search("混凝土")
+        self.page_obj.click_search()
+        self.page_obj.take_screenshot("search", "info")
+
+    # ==================== 分页测试 ===================
+
+    @allure.story("分页")
+    @allure.title("分页跳转")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_pagination_jump(self) -> None:
+        """测试分页跳转功能"""
+        self.page_obj.open()
+        self.page_obj.jump_to_page(2)
+        self.page_obj.take_screenshot("pagination", "info")

@@ -103,9 +103,10 @@ class TestHomePage(BasePageTest):
     @allure.title("产业政策链接跳转")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_nav_industry_policy(self, home_page_shared: HomePage) -> None:
-        """点击产业政策链接跳转
+        """点击导航栏'产业政策'跳转至 /industryNews
 
-        备注：改版后导航文本为'产业政策'但跳转至/industryNews
+        入口说明：导航栏文本为"产业政策"，改版后跳转至 /industryNews（页面 title 为"产业新闻"）。
+        此为正确的路由行为，非缺陷。
         """
         home_page_shared.click_nav_by_text("产业政策")
         assert "industryNews" in home_page_shared.page.url
@@ -761,11 +762,16 @@ class TestHomePage(BasePageTest):
             )
         assert len(errors) == 0, f"发现 {len(errors)} 个控制台错误: {errors[:5]}"
 
-    @allure.story("Bug追踪")
+    @allure.story("顶部导航")
     @allure.title("产业政策导航路由检查")
     @allure.severity(allure.severity_level.NORMAL)
     def test_policy_nav_route(self, home_page_shared: HomePage) -> None:
-        """验证产业政策导航链接的路由一致性"""
+        """验证产业政策导航链接的路由一致性
+
+        入口说明：导航栏"产业政策"跳转至 /industryNews（改版后正确路由）。
+        首页"产业政策"模块的"查看全部"按钮也跳转至 /industryNews。
+        两个入口一致，非缺陷。
+        """
         links = home_page_shared.page.evaluate(
             """() => {
             const out = [];
@@ -780,8 +786,8 @@ class TestHomePage(BasePageTest):
         )
         policy_link = next((l for l in links if l["text"] == "产业政策"), None)
         assert policy_link and policy_link["href"], "产业政策链接未找到"
-        if "industryNews" in policy_link["href"]:
-            pytest.xfail("已知缺陷：导航'产业政策'跳转至 /industryNews 而非 /industryPolicy")
+        assert "industryNews" in policy_link["href"], \
+            f"导航'产业政策'应跳转至 /industryNews，实际: {policy_link['href']}"
 
     @allure.story("Bug追踪")
     @allure.title("图片alt文本检查")

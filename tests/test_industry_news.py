@@ -1,4 +1,10 @@
-"""产业新闻模块测试"""
+"""产业新闻模块测试
+
+入口说明：
+- 导航栏"产业政策"链接跳转至 /industryNews（改版后路由）
+- 该页面 title 为"产业新闻"
+- 首页"产业政策"模块的"查看全部"按钮也跳转至 /industryNews
+"""
 from __future__ import annotations
 
 import allure
@@ -61,3 +67,43 @@ class TestIndustryNews(BasePageTest):
             result_page = click_and_wait_for_new_page(self.page_obj.page, news_title)
             assert len(result_page.content()) > 1000, "新闻内容过短"
             result_page.close()
+
+    # ==================== Tab 切换测试 ===================
+
+    @allure.story("Tab切换")
+    @allure.title("行业动态Tab切换")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_tab_行业动态(self) -> None:
+        """切换到行业动态Tab"""
+        self.page_obj.open()
+        self.page_obj.click_tab("行业动态")
+        self.page_obj.take_screenshot("tab_行业动态", "info")
+
+    @allure.story("Tab切换")
+    @allure.title("政策资讯Tab切换")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_tab_政策资讯(self) -> None:
+        """切换到政策资讯Tab"""
+        self.page_obj.open()
+        self.page_obj.click_tab("政策资讯")
+        self.page_obj.take_screenshot("tab_政策资讯", "info")
+
+    @allure.story("Tab切换")
+    @allure.title("政策解读Tab切换")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_tab_政策解读(self) -> None:
+        """切换到政策解读Tab"""
+        self.page_obj.open()
+        self.page_obj.click_tab("政策解读")
+        self.page_obj.take_screenshot("tab_政策解读", "info")
+
+    # ==================== 分页测试 ===================
+
+    @allure.story("分页")
+    @allure.title("分页跳转")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_pagination_jump(self) -> None:
+        """测试分页跳转功能"""
+        self.page_obj.open()
+        self.page_obj.jump_to_page(2)
+        self.page_obj.take_screenshot("pagination", "info")

@@ -3,6 +3,8 @@
 """
 from __future__ import annotations
 
+import pytest
+
 from pages.base_page import BasePage
 
 
@@ -113,7 +115,5 @@ class AllProductsPage(BasePage):
                 return
         product_count = self.page.locator(self.PRODUCT_CARDS).count()
         if product_count == 0:
-            import pytest
             pytest.skip("未找到商品卡片，跳过价格检查")
-        import pytest
         pytest.skip(f"找到 {product_count} 个商品卡片但未找到价格元素，可能为环境数据问题")

@@ -1,24 +1,23 @@
-"""
-供应链地图模块测试
+"""供应链地图模块测试 - 已废弃
 
-供应链地图是首页的一个模块，通过滚动到页面 800px+ 即可看到。
+改版后首页不再展示供应链地图模块，此文件保留仅作历史参考。
 """
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.supply_chain_map_page import SupplyChainMapPage
 
 
+@pytest.mark.skip(reason="改版后首页无供应链地图模块，已废弃")
 @allure.feature("供应链地图")
 class TestSupplyChainMap(BasePageTest):
-    """供应链地图测试用例"""
+    """供应链地图测试用例 - 已废弃"""
 
     page_name = "供应链地图"
     page_fixture_name = "supply_chain_map_page"
-
-    # ==================== 页面展示 ===================
 
     @allure.story("地图展示")
     @allure.title("供应链地图正常展示")
@@ -40,8 +39,6 @@ class TestSupplyChainMap(BasePageTest):
         assert len(tabs) > 0, "未找到分类标签"
         self.page_obj.take_screenshot("category_tabs", "info")
 
-    # ==================== 区域数据 ===================
-
     @allure.story("区域数据")
     @allure.title("区域数据展示")
     @allure.severity(allure.severity_level.CRITICAL)
@@ -60,8 +57,6 @@ class TestSupplyChainMap(BasePageTest):
         self.page_obj.open()
         self.page_obj.click_first_region()
         self.page_obj.take_screenshot("region_detail", "info")
-
-    # ==================== 分类筛选 ===================
 
     @allure.story("分类筛选")
     @allure.title("建筑建材分类筛选")
