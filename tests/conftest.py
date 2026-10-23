@@ -401,3 +401,10 @@ def pytest_terminal_summary(
     print(f"截图目录: {settings.screenshots_dir}")
     print(f"日志目录: {settings.logs_dir}")
     print("=" * 60)
+
+@pytest.fixture
+def console_errors(page: Page):
+    """收集页面 console error 消息"""
+    errors = []
+    page.on("console", lambda msg: errors.append(msg.text) if msg.type == "error" else None)
+    yield errors
