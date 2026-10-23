@@ -90,7 +90,6 @@ class TestKeyProjects(BasePageTest):
     def test_filter_房建项目(self) -> None:
         """筛选房建项目"""
         self.page_obj.open()
-        self.page_obj.click_filter("房建项目")
         self.page_obj.assert_filter_works("房建项目")
         self.page_obj.take_screenshot("filter_房建项目", "info")
 
@@ -100,7 +99,6 @@ class TestKeyProjects(BasePageTest):
     def test_filter_市政项目(self) -> None:
         """筛选市政项目"""
         self.page_obj.open()
-        self.page_obj.click_filter("市政项目")
         self.page_obj.assert_filter_works("市政项目")
         self.page_obj.take_screenshot("filter_市政项目", "info")
 
@@ -110,7 +108,6 @@ class TestKeyProjects(BasePageTest):
     def test_filter_其他项目(self) -> None:
         """筛选其他项目"""
         self.page_obj.open()
-        self.page_obj.click_filter("其他项目")
         self.page_obj.assert_filter_works("其他项目")
         self.page_obj.take_screenshot("filter_其他项目", "info")
 
@@ -124,3 +121,56 @@ class TestKeyProjects(BasePageTest):
         self.page_obj.open()
         self.page_obj.jump_to_page(2)
         self.page_obj.take_screenshot("pagination", "info")
+
+    @allure.story("分页")
+    @allure.title("分页页码展示")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_pagination_pages_display(self) -> None:
+        """分页组件应展示页码且默认选中第 1 页"""
+        self.page_obj.open()
+        self.page_obj.page.wait_for_timeout(2000)
+        pages = self.page_obj.get_pagination_pages()
+        assert pages, "未找到分页页码"
+        assert "1" in pages, f"分页缺少第 1 页，实际: {pages}"
+        active = self.page_obj.get_active_pagination_page()
+        assert active == "1", f"默认激活页应为 1，实际为 {active!r}"
+
+    @allure.story("分页")
+    @allure.title("翻页后列表内容变化")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_pagination_switches_content(self) -> None:
+        """点击第 2 页后，列表内容必须变化且激活页变为 2"""
+        self.page_obj.open()
+        self.page_obj.page.wait_for_timeout(2000)
+        pages = self.page_obj.get_pagination_pages()
+        if "2" not in pages:
+            pytest.skip(f"当前项目数据仅 {pages} 页，无第 2 页可翻")
+        titles_p1 = self.page_obj.get_list_titles()
+        assert titles_p1, "第 1 页项目列表为空"
+
+        assert self.page_obj.click_pagination_page("2"), "点击第 2 页失败"
+        self.page_obj.page.wait_for_timeout(1500)
+
+        active = self.page_obj.get_active_pagination_page()
+        assert active == "2", f"翻页后激活页应为 2，实际为 {active!r}"
+        titles_p2 = self.page_obj.get_list_titles()
+        assert titles_p2, "第 2 页项目列表为空"
+        assert titles_p1 != titles_p2, "翻页后项目列表内容未变化（分页未生效）"
+        self.page_obj.take_screenshot("pagination_page2", "info")
+
+    @allure.story("分页")
+    @allure.title("返回第一页")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_pagination_back_to_first(self) -> None:
+        """翻到第 2 页后可点击返回第 1 页"""
+        self.page_obj.open()
+        self.page_obj.page.wait_for_timeout(2000)
+        pages = self.page_obj.get_pagination_pages()
+        if "2" not in pages:
+            pytest.skip(f"当前项目数据仅 {pages} 页，无第 2 页可翻")
+        assert self.page_obj.click_pagination_page("2"), "点击第 2 页失败"
+        self.page_obj.page.wait_for_timeout(1500)
+        assert self.page_obj.click_pagination_page("1"), "点击第 1 页失败"
+        self.page_obj.page.wait_for_timeout(1500)
+        active = self.page_obj.get_active_pagination_page()
+        assert active == "1", f"返回后激活页应为 1，实际为 {active!r}"

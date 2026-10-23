@@ -16,7 +16,7 @@ import shutil
 import datetime
 from pathlib import Path
 
-from config.settings import settings
+from config.settings import ENV_CHOICES, settings
 
 
 def clean_reports(reports_dir: str, run_dir: str) -> None:
@@ -104,35 +104,43 @@ def run_tests(
     remark: str = "",
     screenshot_all: bool = False,
     reports_dir: str = "",
-    viewport_width: int = 1920,
-    viewport_height: int = 1080,
+    viewport_width: int | None = None,
+    viewport_height: int | None = None,
     test_url: str = "",
-    env_name: str = "dev",
-    headless: bool = False,
-    parallel: int = 1,
+    env_name: str | None = None,
+    headless: bool | None = None,
+    headed: bool = False,
+    parallel: int | None = None,
     run_dir: str = "",
-    platform: str = "web",
+    platform: str | None = None,
     device_name: str = "",
     mobile: bool = False,
 ) -> tuple[int, str]:
     """运行测试，返回 (exit_code, run_dir)"""
     if mobile:
         platform = "h5"
+
+    viewport_width = viewport_width or settings.viewport_width
+    viewport_height = viewport_height or settings.viewport_height
+    parallel = parallel if parallel is not None else settings.parallel_workers
+    reports_dir = reports_dir or settings.reports_dir
+
     if platform in ("h5", "mobile"):
         viewport_width = 375
         viewport_height = 812
         # H5/mobile 未指定设备时，自动使用默认移动设备进行真正设备仿真
         if not device_name:
             device_name = "iPhone 12"
+
     print("\n" + "=" * 60)
     print("开始运行测试...")
-    print(f"环境: {env_name}")
-    print(f"测试地址: {test_url or settings.env_config.base_url}")
+    print(f"环境: {env_name or settings.env_name}")
+    print(f"测试地址: {test_url or settings.base_url}")
     if device_name:
-        print(f"设备: {device_name} (platform={platform})")
+        print(f"设备: {device_name} (platform={platform or settings.platform})")
     else:
         print(f"视口: {viewport_width}x{viewport_height}")
-    print(f"无头模式: {headless}")
+    print(f"无头模式: {settings.browser_config.headless}")
     print(f"并行数: {parallel}")
     if screenshot_all:
         print("截图模式: 全部测试截图")
@@ -148,7 +156,6 @@ def run_tests(
     env = os.environ.copy()
     env["REPORT_NAME"] = os.path.basename(run_dir)
     env["SCREENSHOT_DIR"] = os.path.join(reports_dir, "screenshots", os.path.basename(run_dir))
-    env["ALLURE_RESULTS_DIR"] = os.path.join(run_dir, "allure-results")
 
     # 构建 pytest 命令
     cmd = [
@@ -159,9 +166,10 @@ def run_tests(
         "--alluredir", os.path.join(run_dir, "allure-results"),
         "--viewport-width", str(viewport_width),
         "--viewport-height", str(viewport_height),
-        "--env", env_name,
     ]
 
+    if env_name:
+        cmd.extend(["--env", env_name])
     if tester:
         cmd.extend(["--tester", tester])
     if remark:
@@ -170,7 +178,9 @@ def run_tests(
         cmd.append("--screenshot-all")
     if test_url:
         cmd.extend(["--test-url", test_url])
-    if headless:
+    if headed:
+        cmd.append("--no-headless")
+    elif headless:
         cmd.append("--headless")
     if parallel > 1:
         cmd.extend(["-n", str(parallel)])
@@ -368,29 +378,30 @@ def main() -> int:
                         help="清理超过7天的旧运行目录、截图、日志和BUG清单")
     parser.add_argument("--keep-days", type=int, default=7,
                         help="清理旧文件时保留的天数，默认7天")
-    parser.add_argument("--reports-dir", default=None, help="报告目录")
-    parser.add_argument("--viewport-width", type=int, default=1920,
-                        help="浏览器视口宽度，默认1920")
-    parser.add_argument("--viewport-height", type=int, default=1080,
-                        help="浏览器视口高度，默认1080")
+    parser.add_argument("--reports-dir", default=None,
+                        help="报告目录（默认取 REPORTS_DIR）")
+    parser.add_argument("--viewport-width", type=int, default=None,
+                        help="浏览器视口宽度（默认取 VIEWPORT_WIDTH）")
+    parser.add_argument("--viewport-height", type=int, default=None,
+                        help="浏览器视口高度（默认取 VIEWPORT_HEIGHT）")
     parser.add_argument("--test-url", default="", help="测试地址（覆盖环境配置）")
-    parser.add_argument("--env", default="dev", choices=["dev", "staging", "prod"],
-                        help="测试环境，默认 dev")
-    parser.add_argument("--headless", action="store_true", default=False,
-                        help="无头模式运行")
+    parser.add_argument("--env", default=None, choices=list(ENV_CHOICES),
+                        help="测试环境，默认取 TEST_ENV")
+    parser.add_argument("--headless", action="store_true", default=None,
+                        help="强制无头模式（覆盖 BROWSER_HEADLESS）")
+    parser.add_argument("--no-headless", action="store_true", default=False,
+                        help="强制有头模式（覆盖 BROWSER_HEADLESS）")
     parser.add_argument("--platform", default=None, choices=["web", "h5", "mobile"],
-                        help="运行平台: web / h5 / mobile")
+                        help="运行平台: web / h5 / mobile（默认取 PLATFORM）")
     parser.add_argument("--device-name", default="",
                         help="Playwright 设备名称（如 'iPhone 12', 'iPhone 12 Pro', 'Pixel 5'）")
-    parser.add_argument("--mobile", action="store_true", default=False,
-                        help="等价于 --platform h5（快捷参数）")
-    parser.add_argument("--parallel", type=int, default=1,
-                        help="并行运行数，默认1（不并行）")
+    parser.add_argument("--mobile", action="store_true", help="等价于 --platform h5（快捷参数）")
+    parser.add_argument("--parallel", type=int, default=None,
+                        help="并行运行数（默认取 PARALLEL_WORKERS），1=不并行")
 
     args = parser.parse_args()
 
-    script_dir = os.path.dirname(__file__)
-    reports_dir = args.reports_dir or os.path.join(script_dir, "reports")
+    reports_dir = args.reports_dir or settings.reports_dir
 
     # 每次运行使用独立目录，默认不清空历史报告
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -414,6 +425,7 @@ def main() -> int:
         test_url=args.test_url,
         env_name=args.env,
         headless=args.headless,
+        headed=args.no_headless,
         parallel=args.parallel,
         platform=args.platform,
         device_name=args.device_name,

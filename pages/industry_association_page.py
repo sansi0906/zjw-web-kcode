@@ -63,7 +63,7 @@ class IndustryAssociationPage(BasePage):
 
     def open(self) -> "IndustryAssociationPage":
         """打开产业协会页面"""
-        base = settings.env_config.base_url.rstrip("/")
+        base = settings.base_url.rstrip("/")
         self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
@@ -106,65 +106,6 @@ class IndustryAssociationPage(BasePage):
             pass
 
     # ==================== 导航操作 ====================
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        # 移动端导航项可能是 button 或 a，优先点击可见元素
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        # 最后兜底：JS 点击不可见元素
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-            return
-        except Exception:
-            pass
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        if self.is_mobile():
-            try:
-                js_texts = self.page.evaluate("""() => {
-                    const sel = 'a, button, [role="button"]';
-                    const els = Array.from(document.querySelectorAll(sel));
-                    const texts = [];
-                    els.forEach(el => {
-                        const t = (el.textContent || '').trim();
-                        if (t && !texts.includes(t)) texts.push(t);
-                    });
-                    return texts;
-                }""")
-                if js_texts:
-                    return js_texts
-            except Exception:
-                pass
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        if not texts:
-            url = self.page.url
-            if "/industryAssociation" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
 
     # ==================== 协会筛选操作 ====================
 
@@ -296,8 +237,5 @@ class IndustryAssociationPage(BasePage):
         assert count >= min_count, f"期望协会数量 >= {min_count}，实际为 {count}"
 
     def assert_filter_works(self, filter_name: str) -> None:
-        """断言筛选功能正常"""
-        self.click_filter(filter_name)
-        self.page.wait_for_timeout(1000)
-        count = self.get_association_count()
-        assert count >= 0, f"筛选 {filter_name} 后协会数量异常"
+        """断言筛选生效（产业协会页当前无分类 tab，调用即视为用例设计错误）"""
+        self.assert_filter_effective(filter_name)

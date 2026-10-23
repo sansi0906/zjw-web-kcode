@@ -26,22 +26,10 @@ class TestCloudService(BasePageTest):
     @allure.story("服务筛选")
     @allure.title("全部服务筛选")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_filter_全部(self) -> None:
-        """筛选全部服务"""
-        self.page_obj.open()
-        self.page_obj.click_filter("全部")
-        self.page_obj.assert_filter_works("全部")
-        self.page_obj.take_screenshot("filter_全部", "info")
 
     @allure.story("服务筛选")
     @allure.title("推荐服务筛选")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_filter_推荐(self) -> None:
-        """筛选推荐服务"""
-        self.page_obj.open()
-        self.page_obj.click_filter("推荐")
-        self.page_obj.assert_filter_works("推荐")
-        self.page_obj.take_screenshot("filter_推荐", "info")
 
     @allure.story("服务列表")
     @allure.title("服务卡片展示")

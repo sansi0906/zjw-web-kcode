@@ -28,9 +28,15 @@ class KeyProjectsPage(BasePage):
     REGISTER_BTN = "text=注册"
 
     # ==================== 项目分类筛选 ====================
-    FILTER_房建项目 = "text=房建项目"
-    FILTER_市政项目 = "text=市政项目"
-    FILTER_其他项目 = "text=其他项目"
+    # 分类 tab 使用 .nav-item 精确定位，避免 text= 误匹配到正文/导航中的同名文本
+    FILTER_TABS = {
+        "房建项目": ".nav-item:has-text('房建项目')",
+        "市政项目": ".nav-item:has-text('市政项目')",
+        "其他项目": ".nav-item:has-text('其他项目')",
+    }
+    FILTER_房建项目 = ".nav-item:has-text('房建项目')"
+    FILTER_市政项目 = ".nav-item:has-text('市政项目')"
+    FILTER_其他项目 = ".nav-item:has-text('其他项目')"
     # ==================== 项目操作按钮 ====================
 
     BTN_发布项目 = "text=发布项目"
@@ -65,55 +71,11 @@ class KeyProjectsPage(BasePage):
 
     def open(self) -> "KeyProjectsPage":
         """打开重点项目页面"""
-        base = settings.env_config.base_url.rstrip("/")
+        base = settings.base_url.rstrip("/")
         self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
     # ==================== 导航操作 ====================
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        # 移动端导航项可能是 button 或 a，优先点击可见元素
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        # 最后兜底：JS 点击不可见元素
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-            return
-        except Exception:
-            pass
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        # 如果没提取到，尝试直接通过 URL 判断
-        if not texts:
-            url = self.page.url
-            if "/keyProject" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
 
     # ==================== 项目筛选操作 ====================
 
@@ -164,6 +126,14 @@ class KeyProjectsPage(BasePage):
                 titles.append(title.strip()[:50])
         return titles
 
+    def get_list_titles(self) -> list[str]:
+        """获取列表条目标题（供筛选/分页断言使用）"""
+        return self.get_project_titles()
+
+    def assert_filter_works(self, filter_name: str) -> None:
+        """断言筛选生效（列表非空，且切换后内容变化）"""
+        self.assert_filter_effective(filter_name)
+
     def click_first_project(self) -> None:
         """点击第一个项目"""
         if self.is_mobile():
@@ -213,6 +183,10 @@ class KeyProjectsPage(BasePage):
         except Exception:
             pass
 
+    def has_pagination(self) -> bool:
+        """是否存在分页控件"""
+        return self.page.locator(".n-pagination").count() > 0
+
     # ==================== 悬浮按钮操作 ====================
 
     def click_customer_service(self) -> None:
@@ -251,10 +225,3 @@ class KeyProjectsPage(BasePage):
         """断言项目卡片存在"""
         count = self.get_project_count()
         assert count >= min_count, f"期望项目数量 >= {min_count}，实际为 {count}"
-
-    def assert_filter_works(self, filter_name: str) -> None:
-        """断言筛选功能正常"""
-        self.click_filter(filter_name)
-        self.page.wait_for_timeout(1000)
-        count = self.get_project_count()
-        assert count >= 0, f"筛选 {filter_name} 后项目数量异常"

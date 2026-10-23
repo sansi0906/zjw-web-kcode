@@ -21,6 +21,22 @@ class BasePageTest:
     page_name: str = ""
     page_fixture_name: str = ""
 
+    def _first_visible(self, selector: str):
+        """返回第一个可见的匹配元素（找不到返回 None）
+
+        站点同时渲染 PC/移动端两套页脚与悬浮按钮，隐藏的那套在 DOM 中排在前，
+        直接用 .first 会取到隐藏元素导致误判。
+        """
+        loc = self.page_obj.page.locator(selector)
+        for i in range(min(loc.count(), 20)):
+            el = loc.nth(i)
+            try:
+                if el.is_visible(timeout=500):
+                    return el
+            except Exception:
+                continue
+        return None
+
     @pytest.fixture(autouse=True)
     def _setup(self, request) -> None:
         """自动注入页面 fixture"""
@@ -54,22 +70,18 @@ class BasePageTest:
     @allure.title("链接高亮")
     @allure.severity(allure.severity_level.NORMAL)
     def test_nav_active_state(self) -> None:
-        """当前页面导航项应为激活状态"""
+        """当前页面导航项应为激活状态
+
+        按 href 匹配当前路由对应的导航链接，校验其带有激活样式。
+        """
         allure.dynamic.title(f"{self.page_name} - 链接高亮")
         self.page_obj.open()
-        nav = self.page_obj.page.locator(f"text={self.page_name}").first
-        if nav.is_visible():
-            cls = nav.get_attribute("class") or ""
-            if "router-link-active" in cls or "#1653FF" in cls or "active" in cls:
-                return
-            parent = nav.locator("..")
-            if parent.count() > 0:
-                cls = parent.get_attribute("class") or ""
-                if "router-link-active" in cls or "active" in cls:
-                    return
-            pytest.skip(f"{self.page_name}导航项存在但未检测到激活状态")
-        else:
-            pytest.skip(f"{self.page_name}导航项在当前页面不可见")
+        cls = self.page_obj.get_active_nav_class()
+        if cls is None:
+            pytest.skip(f"{self.page_name}当前路由不在顶部导航中")
+        assert "router-link-active" in cls or "active" in cls, (
+            f"{self.page_name}导航项未激活, class={cls}"
+        )
 
     @allure.story("悬浮功能区")
     @allure.title("在线客服按钮")
@@ -79,7 +91,7 @@ class BasePageTest:
         allure.dynamic.title(f"{self.page_name} - 在线客服按钮")
         self.page_obj.open()
         customer_service_selector = getattr(self.page_obj, 'FLOAT_CUSTOMER_SERVICE', "[class*='customer'], [class*='service'], div:has-text('客服')")
-        if self.page_obj.page.locator(customer_service_selector).count() == 0:
+        if self._first_visible(customer_service_selector) is None:
             pytest.skip("当前页面未配置在线客服按钮")
         self.page_obj.click_customer_service()
 
@@ -91,7 +103,7 @@ class BasePageTest:
         allure.dynamic.title(f"{self.page_name} - 意向填报按钮")
         self.page_obj.open()
         intent_form_selector = getattr(self.page_obj, 'FLOAT_INTENT_FORM', "[class*='intent'], [class*='form'], div:has-text('意向')")
-        if self.page_obj.page.locator(intent_form_selector).count() == 0:
+        if self._first_visible(intent_form_selector) is None:
             pytest.skip("当前页面未配置意向填报按钮")
         self.page_obj.click_intent_form()
 
@@ -104,8 +116,7 @@ class BasePageTest:
         self.page_obj.open()
         self.page_obj.scroll_to_footer()
         phone_selector = getattr(self.page_obj, 'FOOTER_SERVICE_PHONE', "text=400-, text=电话, [class*='phone']")
-        phone = self.page_obj.page.locator(phone_selector).first
-        if not phone.is_visible():
+        if self._first_visible(phone_selector) is None:
             pytest.skip("当前页面未配置服务电话")
 
     @allure.story("页脚")
@@ -117,6 +128,31 @@ class BasePageTest:
         self.page_obj.open()
         self.page_obj.scroll_to_footer()
         icp_selector = getattr(self.page_obj, 'FOOTER_ICP', "text=ICP, text=备案, text=京ICP, text=津ICP")
-        icp = self.page_obj.page.locator(icp_selector).first
-        if not icp.is_visible():
+        if self._first_visible(icp_selector) is None:
             pytest.skip("当前页面未配置备案号链接")
+
+    # ==================== 页面健康度 ====================
+
+    @allure.story("页面健康度")
+    @allure.title("无横向溢出")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_horizontal_overflow(self) -> None:
+        """页面不应出现横向滚动条"""
+        allure.dynamic.title(f"{self.page_name} - 无横向溢出")
+        self.page_obj.open()
+        self.page_obj.page.wait_for_timeout(1000)
+        overflow, scroll_width, client_width = self.page_obj.has_horizontal_overflow()
+        assert not overflow, (
+            f"{self.page_name}出现横向溢出: scrollWidth={scroll_width}, clientWidth={client_width}"
+        )
+
+    @allure.story("页面健康度")
+    @allure.title("图片加载正常")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_broken_images(self) -> None:
+        """页面不应存在加载失败的图片"""
+        allure.dynamic.title(f"{self.page_name} - 图片加载正常")
+        self.page_obj.open()
+        self.page_obj.page.wait_for_timeout(1500)
+        broken = self.page_obj.get_broken_images()
+        assert not broken, f"{self.page_name}存在加载失败的图片: {broken}"

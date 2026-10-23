@@ -12,11 +12,15 @@ class DemandPage(BasePage):
 
     PAGE_URL = "/demandPage"
 
-    # 分类标签
-    TAB_建筑建材 = "text=建筑建材"
-    TAB_机械设备 = "text=机械设备"
-    TAB_劳务用工 = "text=劳务用工"
-    TAB_技术服务 = "text=技术服务"
+    # 分类标签（w-[140px] 的 tab 容器内，避免误匹配页脚同名链接）
+    FILTER_TABS = {
+        name: f"div[class*='w-[140px]'] span:text-is('{name}')"
+        for name in ["建筑建材", "机械设备", "劳务用工", "技术服务"]
+    }
+    TAB_建筑建材 = FILTER_TABS["建筑建材"]
+    TAB_机械设备 = FILTER_TABS["机械设备"]
+    TAB_劳务用工 = FILTER_TABS["劳务用工"]
+    TAB_技术服务 = FILTER_TABS["技术服务"]
 
     # 搜索
     SEARCH_INPUT = "input[type='text']"
@@ -32,7 +36,7 @@ class DemandPage(BasePage):
     PAGINATION_JUMP = "text=跳转"
 
     def open(self) -> "DemandPage":
-        base = settings.env_config.base_url.rstrip("/")
+        base = settings.base_url.rstrip("/")
         self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
@@ -76,6 +80,24 @@ class DemandPage(BasePage):
                 texts.append(t.strip())
         return texts
 
+    def get_demand_titles(self) -> list[str]:
+        """获取需求条目标题"""
+        cards = self.page.locator("span.line-clamp-2")
+        titles = []
+        for i in range(cards.count()):
+            t = cards.nth(i).text_content()
+            if t and t.strip():
+                titles.append(t.strip()[:50])
+        return titles
+
+    def get_list_titles(self) -> list[str]:
+        """获取列表条目标题（供筛选/分页断言使用）"""
+        return self.get_demand_titles()
+
+    def assert_filter_works(self, filter_name: str) -> None:
+        """断言筛选生效（列表非空，且切换后内容变化）"""
+        self.assert_filter_effective(filter_name)
+
     def jump_to_page(self, page_num: int) -> None:
         try:
             inp = self.page.locator(self.PAGINATION_INPUT).first
@@ -91,44 +113,6 @@ class DemandPage(BasePage):
             assert "/demandPage" in self.page.url
             return
         self.assert_text_visible("产业需求", partial=True)
-
-    def get_nav_texts(self) -> list:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(".nav-left a, .header-title a, header a, nav a, .nav-item a")
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        if not texts:
-            texts = ["首页", "供应大厅", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-        except Exception:
-            pass
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
