@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pytest
 
+from config.settings import settings
 from pages.base_page import BasePage
 
 
@@ -46,6 +47,24 @@ class SupplyHallPage(BasePage):
     CAT_工程机械 = "text=工程机械"
     CAT_劳务用工 = "text=劳务用工"
 
+    # 搜索页 URL（真正的 in-place 筛选面板所在页面）
+    SEARCH_PAGE_URL = "/supplyHall/search?productType=building_materials&rentalStatus=sale&category1Id=1000001"
+
+    # 子分类（搜索页"一级分类"行内的按钮，带 aria-pressed）
+    FILTER_TABS = {
+        name: (
+            "div[class*='grid-cols-[104px_minmax(0,1fr)_56px]']"
+            ":has(> div:text-is('一级分类')) button:text-is('" + name + "')"
+        )
+        for name in ["土建", "文施", "电气", "给排水", "装饰装修", "市政"]
+    }
+
+    # 产品类型（搜索页顶部按钮组）
+    PRODUCT_TYPE_TABS = {
+        name: f"section[aria-label='产品类型与租售状态'] button:text-is('{name}')"
+        for name in ["建筑建材", "机械设备", "劳务用工"]
+    }
+
     # 子分类
     CAT_土建 = "text=土建"
     CAT_装饰装修 = "text=装饰装修"
@@ -64,15 +83,16 @@ class SupplyHallPage(BasePage):
     RESET_BTN = "text=重置"
 
     # ==================== 商品卡片 ====================
+    # 商品条目使用 <article> 标签渲染
     PRODUCT_CARDS = (
-        "[class*='supply-item'], [class*='product-card'], "
+        "article, [class*='supply-item'], [class*='product-card'], "
         "[class*='goods-card'], [class*='item-card'], "
         "div[class*='card']:not([class*='nav']):not([class*='header']):"
         "not([class*='footer']):not([class*='float'])"
     )
     # 移动端商品卡片选择器（移动端为 button 网格布局）
     PRODUCT_CARDS_MOBILE = (
-        "[class*='supply-item'], [class*='product-card'], "
+        "article, [class*='supply-item'], [class*='product-card'], "
         "[class*='goods-card'], [class*='item-card'], "
         "div[class*='card']:not([class*='nav']):not([class*='header']):"
         "not([class*='footer']):not([class*='float']), "
@@ -88,53 +108,19 @@ class SupplyHallPage(BasePage):
 
     def open(self) -> "SupplyHallPage":
         """打开供应大厅页面"""
-        self.goto()
+        base = settings.base_url.rstrip("/")
+        self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接（支持 H5 抽屉导航）"""
-        # 先尝试打开抽屉（非移动端直接返回 False，不影响 web）
-        self._open_mobile_nav_if_needed()
-        # 移动端导航项可能是 button 或 a，优先点击可见元素
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        # 最后兜底：JS 点击不可见元素（移动端导航可能隐藏在抽屉中）
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-            return
-        except Exception:
-            pass
+    def open_search(self) -> "SupplyHallPage":
+        """打开供应大厅搜索页（含 in-place 筛选面板）"""
+        base = settings.base_url.rstrip("/")
+        self.goto(url=f"{base}{self.SEARCH_PAGE_URL}")
+        return self
 
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        if not texts:
-            url = self.page.url
-            if "supplyHall" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
+    def open_filter_source(self) -> None:
+        """筛选操作前打开搜索页"""
+        self.open_search()
 
     def click_view_all(self) -> None:
         """点击查看全部按钮"""
@@ -300,6 +286,26 @@ class SupplyHallPage(BasePage):
             if title and title.strip():
                 titles.append(title.strip()[:50])
         return titles
+
+    def get_list_titles(self) -> list[str]:
+        """获取列表条目标题（供筛选/分页断言使用）"""
+        if "/supplyHall/search" in self.page.url:
+            return self.get_search_product_titles()
+        return self.get_supply_item_titles()
+
+    def get_search_product_titles(self) -> list[str]:
+        """获取搜索页商品标题（article 元素）"""
+        cards = self.page.locator("article")
+        titles = []
+        for i in range(cards.count()):
+            text = (cards.nth(i).text_content() or "").strip()
+            if text:
+                titles.append(text.replace("\n", " ")[:60])
+        return titles
+
+    def assert_filter_works(self, filter_name: str) -> None:
+        """断言筛选生效（列表非空，且切换后内容变化）"""
+        self.assert_filter_effective(filter_name)
 
     def click_first_supply_item(self) -> None:
         """点击第一个供应商品"""

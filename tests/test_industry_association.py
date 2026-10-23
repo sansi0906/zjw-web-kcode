@@ -26,22 +26,10 @@ class TestIndustryAssociation(BasePageTest):
     @allure.story("协会筛选")
     @allure.title("全部协会筛选")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_filter_全部(self) -> None:
-        """筛选全部协会"""
-        self.page_obj.open()
-        self.page_obj.click_filter("产业协会")
-        self.page_obj.assert_filter_works("产业协会")
-        self.page_obj.take_screenshot("filter_全部", "info")
 
     @allure.story("协会筛选")
     @allure.title("推荐协会筛选")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_filter_推荐(self) -> None:
-        """筛选推荐协会"""
-        self.page_obj.open()
-        self.page_obj.click_filter("协会入驻")
-        self.page_obj.assert_filter_works("协会入驻")
-        self.page_obj.take_screenshot("filter_推荐", "info")
 
     @allure.story("协会列表")
     @allure.title("协会卡片展示")
@@ -77,14 +65,6 @@ class TestIndustryAssociation(BasePageTest):
     @allure.story("协会入驻")
     @allure.title("协会入驻筛选")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_filter_协会入驻(self) -> None:
-        """筛选协会入驻"""
-        self.page_obj.open()
-        self.page_obj.click_filter("协会入驻")
-        self.page_obj.assert_filter_works("协会入驻")
-        self.page_obj.take_screenshot("filter_协会入驻", "info")
-
-    # ==================== 搜索测试 ===================
 
     @allure.story("搜索")
     @allure.title("搜索协会")

@@ -50,7 +50,7 @@ class CloudServicePage(BasePage):
 
     def open(self) -> "CloudServicePage":
         """打开云服务页面"""
-        base = settings.env_config.base_url.rstrip("/")
+        base = settings.base_url.rstrip("/")
         self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
@@ -67,11 +67,8 @@ class CloudServicePage(BasePage):
             self.page.wait_for_timeout(1000)
 
     def assert_filter_works(self, filter_name: str) -> None:
-        """断言筛选功能正常"""
-        self.click_filter(filter_name)
-        self.page.wait_for_timeout(1000)
-        count = self.get_service_count()
-        assert count >= 0, f"筛选 {filter_name} 后服务数量异常"
+        """断言筛选生效（云服务页当前无分类 tab，调用即视为用例设计错误）"""
+        self.assert_filter_effective(filter_name)
 
     def click_view_all(self) -> None:
         """点击查看全部"""
@@ -81,49 +78,6 @@ class CloudServicePage(BasePage):
             self.wait_for_load()
 
     # ==================== 导航操作 ====================
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        # 移动端导航项可能是 button 或 a，优先点击可见元素
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        # 最后兜底：JS 点击不可见元素
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-            return
-        except Exception:
-            pass
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        if not texts:
-            url = self.page.url
-            if "/cloudService" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
 
     # ==================== 云服务卡片操作 ====================
 

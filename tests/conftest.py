@@ -19,7 +19,7 @@ import pytest
 import yaml
 from playwright.sync_api import Browser, Page, sync_playwright
 
-from config.settings import settings
+from config.settings import ENV_CHOICES, settings
 from utils.browser_helpers import wait_for_network_idle
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -79,28 +79,34 @@ init_directories()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    """添加自定义命令行参数"""
-    parser.addoption("--env", action="store", default="dev",
-                     choices=["dev", "staging", "prod"],
-                     help="测试环境: dev / staging / prod")
-    parser.addoption("--tester", action="store", default="",
+    """添加自定义命令行参数
+
+    所有可覆盖配置项的默认值均为 None，含义是「不覆盖，沿用 .env / 配置默认值」。
+    这样环境变量才能真正生效。
+    """
+    parser.addoption("--env", action="store", default=None,
+                     choices=list(ENV_CHOICES),
+                     help=f"测试环境: {' / '.join(ENV_CHOICES)}（默认取 TEST_ENV）")
+    parser.addoption("--tester", action="store", default=None,
                      help="测试人员姓名")
-    parser.addoption("--remark", action="store", default="",
+    parser.addoption("--remark", action="store", default=None,
                      help="测试备注")
     parser.addoption("--screenshot-all", action="store_true", default=False,
                      help="对所有测试截图（包括通过的测试）")
-    parser.addoption("--viewport-width", type=int, default=1920,
-                     help="浏览器视口宽度")
-    parser.addoption("--viewport-height", type=int, default=1080,
-                     help="浏览器视口高度")
-    parser.addoption("--test-url", action="store", default="",
+    parser.addoption("--viewport-width", type=int, default=None,
+                     help="浏览器视口宽度（默认取 VIEWPORT_WIDTH）")
+    parser.addoption("--viewport-height", type=int, default=None,
+                     help="浏览器视口高度（默认取 VIEWPORT_HEIGHT）")
+    parser.addoption("--test-url", action="store", default=None,
                      help="测试地址（覆盖环境配置）")
-    parser.addoption("--headless", action="store_true", default=False,
-                     help="无头模式运行")
-    parser.addoption("--platform", action="store", default="web",
+    parser.addoption("--headless", action="store_true", default=None,
+                     help="无头模式运行（覆盖 BROWSER_HEADLESS）")
+    parser.addoption("--no-headless", action="store_true", default=False,
+                     help="有头模式运行（覆盖 BROWSER_HEADLESS）")
+    parser.addoption("--platform", action="store", default=None,
                      choices=["web", "h5", "mobile"],
-                     help="运行平台: web / h5 / mobile")
-    parser.addoption("--device-name", action="store", default="",
+                     help="运行平台: web / h5 / mobile（默认取 PLATFORM）")
+    parser.addoption("--device-name", action="store", default=None,
                      help="Playwright 设备名称（如 'iPhone 12', 'iPhone 12 Pro', 'Pixel 5', 'iPad', 'Samsung Galaxy S10'）")
     parser.addoption("--mobile", action="store_true", default=False,
                      help="等价于 --platform h5（快捷参数）")
@@ -110,25 +116,49 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """pytest 配置初始化"""
+    """pytest 配置初始化 - 命令行参数按需覆盖配置"""
     env_name = config.getoption("--env")
-    test_url = config.getoption("--test-url")
-    headless = config.getoption("--headless")
+    if env_name:
+        settings.env_name = env_name
 
-    # 平台/设备参数
+    test_url = config.getoption("--test-url")
+    if test_url:
+        settings.base_url_override = test_url
+
+    if config.getoption("--no-headless"):
+        settings.browser_headless = False
+    else:
+        headless = config.getoption("--headless")
+        if headless is not None:
+            settings.browser_headless = headless
+
     platform = config.getoption("--platform")
-    device_name = config.getoption("--device-name")
     if config.getoption("--mobile"):
         platform = "h5"
+    if platform:
+        settings.platform = platform
 
-    # 更新全局配置
-    settings.env_name = env_name
-    settings.browser_headless = headless
-    settings.base_url = test_url or settings.env_config.base_url
-    settings.tester = config.getoption("--tester") or "未指定"
-    settings.remark = config.getoption("--remark") or "无"
-    settings.platform = platform
-    settings.device = device_name
+    device_name = config.getoption("--device-name")
+    if device_name is not None:
+        settings.device = device_name
+
+    viewport_width = config.getoption("--viewport-width")
+    if viewport_width:
+        settings.viewport_width = viewport_width
+    viewport_height = config.getoption("--viewport-height")
+    if viewport_height:
+        settings.viewport_height = viewport_height
+
+    tester = config.getoption("--tester")
+    if tester:
+        settings.tester = tester
+    remark = config.getoption("--remark")
+    if remark:
+        settings.remark = remark
+
+    # 重试策略由配置驱动（pytest.ini 不再硬编码 --reruns）
+    config.option.reruns = settings.reruns
+    config.option.reruns_delay = settings.reruns_delay
 
     # 写入 Allure 环境信息
     env_file = Path(settings.reports_dir) / "allure-results" / "environment.properties"
@@ -137,13 +167,13 @@ def pytest_configure(config: pytest.Config) -> None:
         f.write(f"环境={settings.env_name}\n")
         f.write(f"测试地址={settings.base_url}\n")
         f.write(f"浏览器={settings.browser_config.browser_type}\n")
-        f.write(f"无头模式={settings.browser_headless}\n")
+        f.write(f"无头模式={settings.browser_config.headless}\n")
         f.write(f"平台={settings.platform}\n")
         if settings.device:
             f.write(f"设备={settings.device}\n")
         f.write(f"视口={settings.viewport_width}x{settings.viewport_height}\n")
-        f.write(f"测试人员={settings.tester}\n")
-        f.write(f"备注={settings.remark}\n")
+        f.write(f"测试人员={settings.tester or '未指定'}\n")
+        f.write(f"备注={settings.remark or '无'}\n")
 
 
 # ==================== 浏览器 Fixtures ====================
@@ -151,9 +181,10 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.fixture(scope="session")
 def browser() -> Browser:
-    """Session 级 Browser"""
+    """Session 级 Browser - 内核由 BROWSER_TYPE 配置决定"""
     with sync_playwright() as p:
-        browser = p.chromium.launch(
+        browser_type = getattr(p, settings.browser_config.browser_type, p.chromium)
+        browser = browser_type.launch(
             headless=settings.browser_config.headless,
             slow_mo=settings.browser_config.slow_mo,
         )
@@ -161,49 +192,41 @@ def browser() -> Browser:
         browser.close()
 
 
-@pytest.fixture(scope="function")
-def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
-    """
-    Function 级 Page
-    自动打开测试地址，测试结束后自动关闭
-    支持设备模拟（--device-name）或平台（--platform web/h5）设置视口
-    """
-    viewport_width = request.config.getoption("--viewport-width")
-    viewport_height = request.config.getoption("--viewport-height")
+def _new_page(request: pytest.FixtureRequest) -> Page:
+    """按配置创建页面（视口 / 设备仿真）"""
+    viewport_width = request.config.getoption("--viewport-width") or settings.viewport_width
+    viewport_height = request.config.getoption("--viewport-height") or settings.viewport_height
     device_name = request.config.getoption("--device-name") or settings.device
     platform = request.config.getoption("--platform") or settings.platform
     if request.config.getoption("--mobile"):
         platform = "h5"
 
     # H5/mobile 平台未指定设备时，自动使用默认移动设备进行真正设备仿真
-    #（仅设置 viewport 不会触发移动端布局，需 isMobile/hasTouch/UA 等）
+    # （仅设置 viewport 不会触发移动端布局，需 isMobile/hasTouch/UA 等）
     if platform in ("h5", "mobile") and not device_name:
-        default_device = PLAYWRIGHT_DEVICES.get("iPhone 12")
-        if default_device:
-            device_name = "iPhone 12"
-        else:
-            device_name = ""
+        device_name = "iPhone 12" if "iPhone 12" in PLAYWRIGHT_DEVICES else ""
 
+    browser: Browser = request.getfixturevalue("browser")
     if device_name:
         device = PLAYWRIGHT_DEVICES.get(device_name)
         if device:
-            page = browser.new_page(**device)
-        else:
-            page = browser.new_page()
-    else:
-        if viewport_width is None or viewport_height is None:
-            if platform in ("h5", "mobile"):
-                viewport_width = 375
-                viewport_height = 812
-            else:
-                viewport_width = 1920
-                viewport_height = 1080
-        page = browser.new_page(
-            viewport={"width": viewport_width, "height": viewport_height}
-        )
-    page.goto(settings.base_url, timeout=settings.browser_config.timeout)
-    wait_for_network_idle(page)
+            return browser.new_page(**device)
 
+    return browser.new_page(
+        viewport={"width": viewport_width, "height": viewport_height}
+    )
+
+
+@pytest.fixture(scope="function")
+def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
+    """
+    Function 级 Page
+    测试结束后自动关闭
+
+    注意：此处不做初始导航，页面对象通过 `open()` 自行跳转，
+    避免每个用例都多加载一次首页（可节省约 40% 全量耗时）。
+    """
+    page = _new_page(request)
     yield page
     page.close()
 
@@ -215,40 +238,7 @@ def shared_page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     整个测试模块只创建一次页面，适合单页快速遍历场景
     注意：使用此 fixture 的测试用例需要自行维护页面状态（跳转后回首页）
     """
-    viewport_width = request.config.getoption("--viewport-width")
-    viewport_height = request.config.getoption("--viewport-height")
-    device_name = request.config.getoption("--device-name") or settings.device
-    platform = request.config.getoption("--platform") or settings.platform
-    if request.config.getoption("--mobile"):
-        platform = "h5"
-
-    # H5/mobile 平台未指定设备时，自动使用默认移动设备进行真正设备仿真
-    if platform in ("h5", "mobile") and not device_name:
-        default_device = PLAYWRIGHT_DEVICES.get("iPhone 12")
-        if default_device:
-            device_name = "iPhone 12"
-        else:
-            device_name = ""
-
-    if device_name:
-        device = PLAYWRIGHT_DEVICES.get(device_name)
-        if device:
-            page = browser.new_page(**device)
-        else:
-            page = browser.new_page()
-    else:
-        if viewport_width is None or viewport_height is None:
-            if platform in ("h5", "mobile"):
-                viewport_width = 375
-                viewport_height = 812
-            else:
-                viewport_width = 1920
-                viewport_height = 1080
-        page = browser.new_page(
-            viewport={"width": viewport_width, "height": viewport_height}
-        )
-    page.goto(settings.base_url, timeout=settings.browser_config.timeout)
-    wait_for_network_idle(page)
+    page = _new_page(request)
 
     # 关闭首次加载弹窗
     try:
@@ -354,7 +344,7 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
             screenshot_all = item.config.getoption("--screenshot-all", default=False)
             if report.failed and settings.screenshot_on_failure:
                 _take_screenshot(page_obj, item, "failed")
-            elif screenshot_all or settings.screenshot_on_pass:
+            elif screenshot_all:
                 _take_screenshot(page_obj, item, "passed")
 
         # 附加执行时长

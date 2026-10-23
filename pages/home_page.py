@@ -129,124 +129,6 @@ class HomePage(BasePage):
         """点击注册按钮"""
         self.click(self.REGISTER_BTN)
 
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        if self.is_mobile():
-            # 移动端导航可能在抽屉内，先尝试展开
-            self._open_mobile_nav_if_needed()
-            self.page.wait_for_timeout(300)
-            # 使用 JS 获取所有导航文本（包括不可见元素），避免 Playwright 可见性限制
-            try:
-                js_texts = self.page.evaluate("""() => {
-                    const sel = 'a, button, [role="button"]';
-                    const els = Array.from(document.querySelectorAll(sel));
-                    const texts = [];
-                    els.forEach(el => {
-                        const t = (el.textContent || '').trim();
-                        if (t && !texts.includes(t)) texts.push(t);
-                    });
-                    return texts;
-                }""")
-                if js_texts:
-                    return js_texts
-            except Exception:
-                pass
-            nav_selectors = [
-                ".n-drawer a", ".n-drawer button",
-                ".ant-drawer a", ".ant-drawer button",
-                ".drawer a", ".drawer button",
-                "[class*='drawer'] a", "[class*='drawer'] button",
-                ".nav-collapse a", ".nav-collapse button",
-                ".mobile-nav a", ".mobile-nav button",
-                "nav a", "nav button",
-                "header a", "header button",
-                ".nav a", ".nav button",
-                self.NAV_ITEMS,
-                "button",
-            ]
-            texts = []
-            for sel in nav_selectors:
-                try:
-                    navs = self.page.locator(sel)
-                    for i in range(navs.count()):
-                        try:
-                            el = navs.nth(i)
-                            text = ""
-                            try:
-                                if el.is_visible(timeout=300):
-                                    text = el.text_content() or ""
-                                else:
-                                    text = el.get_attribute("textContent") or ""
-                            except Exception:
-                                text = el.get_attribute("textContent") or ""
-                        except Exception:
-                            continue
-                        if text and text.strip():
-                            t = text.strip()
-                            if t and t not in texts:
-                                texts.append(t)
-                except Exception:
-                    continue
-            return texts
-
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        return texts
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        if self.is_mobile():
-            self._open_mobile_nav_if_needed()
-            # 移动端导航项可能是 button 或 a，直接查找可见元素
-            for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-                try:
-                    nav = self.page.locator(sel).first
-                    if nav.is_visible(timeout=1500):
-                        nav.click()
-                        self.wait_for_load()
-                        return
-                except Exception:
-                    continue
-            # 优先在抽屉内查找（作为兜底）
-            for ds in [".n-drawer", ".ant-drawer", ".drawer", "[class*='drawer']", ".nav-collapse"]:
-                try:
-                    if self.page.locator(ds).first.is_visible(timeout=800):
-                        link = self.page.locator(f"{ds} a:has-text('{nav_text}')").first
-                        if link.is_visible(timeout=1000):
-                            link.click()
-                            self.wait_for_load()
-                            return
-                except Exception:
-                    continue
-            # 最后兜底：JS 点击不可见元素（移动端导航可能隐藏在抽屉中）
-            try:
-                self.page.evaluate(
-                    """(text) => {
-                    const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                    const el = els.find(e => (e.textContent||'').trim() === text);
-                    if (el) { el.click(); return true; }
-                    return false;
-                    }""",
-                    nav_text,
-                )
-                self.page.wait_for_timeout(1500)
-                self.wait_for_load()
-                return
-            except Exception:
-                pass
-            self._close_mobile_nav_if_needed()
-            return
-        nav = self.page.locator(f"text={nav_text}").first
-        if nav.is_visible():
-            nav.click()
-            self.wait_for_load()
-
-    # ==================== 搜索操作 ====================
-
     def fill_search_input(self, text: str) -> None:
         """填充搜索框"""
         search = self.page.locator(self.SEARCH_INPUT).first
@@ -259,6 +141,35 @@ class HomePage(BasePage):
         if btn.is_visible():
             btn.click()
             self.wait_for_load()
+
+    def do_search(self, keyword: str) -> None:
+        """输入关键词并执行搜索"""
+        self.fill_search_input(keyword)
+        self.page.wait_for_timeout(500)
+        self.click_search_btn()
+        self.page.wait_for_timeout(2000)
+
+    def get_search_result_titles(self) -> list[str]:
+        """获取搜索结果页的商品标题"""
+        cards = self.page.locator("article")
+        titles = []
+        for i in range(cards.count()):
+            text = (cards.nth(i).text_content() or "").strip()
+            if text:
+                titles.append(text.replace("\n", " ")[:60])
+        return titles
+
+    def has_search_empty_hint(self) -> bool:
+        """搜索结果页是否展示"没有找到相关数据"提示"""
+        body = self.page.locator("body").inner_text()
+        return "没有找到相关数据" in body
+
+    def get_search_keyword(self) -> str:
+        """从搜索结果页 URL 中解析关键词"""
+        from urllib.parse import parse_qs, urlparse
+        query = parse_qs(urlparse(self.page.url).query)
+        values = query.get("keyword") or []
+        return values[0] if values else ""
 
     # ==================== 热门搜索 ====================
 
@@ -439,11 +350,24 @@ class HomePage(BasePage):
         return titles
 
     def click_view_all_demand(self) -> None:
-        """点击产业需求'查看全部'"""
-        btn = self.page.locator(self.VIEW_ALL_DEMAND).first
-        if btn.is_visible():
-            btn.click()
+        """点击产业需求'查看全部'（按 href 精确定位，避免点到会展的查看全部）"""
+        btns = self.page.locator(self.VIEW_ALL_DEMAND)
+        for i in range(btns.count()):
+            btn = btns.nth(i)
+            href = btn.get_attribute("href") or ""
+            if "demandPage" in href:
+                old_url = self.page.url
+                btn.click()
+                self.wait_for_load()
+                self.wait_for_url_change(old_url)
+                return
+        # 兜底：点击最后一个查看全部（产业需求区块）
+        fallback = self.page.locator("a:has-text('查看全部')").last
+        if fallback.is_visible():
+            old_url = self.page.url
+            fallback.click()
             self.wait_for_load()
+            self.wait_for_url_change(old_url)
 
     # ==================== 产业政策 ====================
 
@@ -486,8 +410,10 @@ class HomePage(BasePage):
             btn = btns.nth(i)
             href = btn.get_attribute("href") or ""
             if "industryNews" in href:
+                old_url = self.page.url
                 btn.click()
                 self.wait_for_load()
+                self.wait_for_url_change(old_url)
                 return
 
     # ==================== 页脚 ====================

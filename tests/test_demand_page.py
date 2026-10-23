@@ -24,36 +24,36 @@ class TestDemandPage(BasePageTest):
     @allure.title("建筑建材分类筛选")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_filter_建筑建材(self) -> None:
-        """筛选建筑建材分类"""
+        """筛选建筑建材分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_tab("建筑建材")
+        self.page_obj.assert_filter_works("建筑建材")
         self.page_obj.take_screenshot("filter_建筑建材", "info")
 
     @allure.story("分类筛选")
     @allure.title("机械设备分类筛选")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_filter_机械设备(self) -> None:
-        """筛选机械设备分类"""
+        """筛选机械设备分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_tab("机械设备")
+        self.page_obj.assert_filter_works("机械设备")
         self.page_obj.take_screenshot("filter_机械设备", "info")
 
     @allure.story("分类筛选")
     @allure.title("劳务用工分类筛选")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_filter_劳务用工(self) -> None:
-        """筛选劳务用工分类"""
+        """筛选劳务用工分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_tab("劳务用工")
+        self.page_obj.assert_filter_works("劳务用工")
         self.page_obj.take_screenshot("filter_劳务用工", "info")
 
     @allure.story("分类筛选")
     @allure.title("技术服务分类筛选")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_filter_技术服务(self) -> None:
-        """筛选技术服务分类"""
+        """筛选技术服务分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_tab("技术服务")
+        self.page_obj.assert_filter_works("技术服务")
         self.page_obj.take_screenshot("filter_技术服务", "info")
 
     # ==================== 搜索测试 ===================

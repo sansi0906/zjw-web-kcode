@@ -26,12 +26,6 @@ class TestAchievementTransformation(BasePageTest):
     @allure.story("成果筛选")
     @allure.title("科技创新成果筛选")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_filter_科技创新成果(self) -> None:
-        """筛选科技创新成果"""
-        self.page_obj.open()
-        self.page_obj.click_filter("科技创新成果")
-        self.page_obj.assert_filter_works("科技创新成果")
-        self.page_obj.take_screenshot("filter_科技创新成果", "info")
 
     @allure.story("成果筛选")
     @allure.title("课题筛选")

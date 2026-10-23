@@ -3,10 +3,12 @@
 """
 from __future__ import annotations
 
+from config.settings import settings
 from pages.base_page import BasePage
 
 
 class IndustryPolicyPage(BasePage):
+    PAGE_URL = "/industryPolicy"
     """产业政策页面"""
 
     # ==================== 顶部导航 ====================
@@ -25,15 +27,23 @@ class IndustryPolicyPage(BasePage):
     REGISTER_BTN = "text=注册"
 
     # ==================== 政策分类筛选 ====================
-    FILTER_政策咨询 = "text=政策咨询"
-    FILTER_政策解读 = "text=政策解读"
-    FILTER_行业动态 = "text=行业动态"
-    FILTER_全部 = "text=全部"
-    FILTER_推荐 = "text=推荐"
+    # 分类 tab 使用 .nav-item 精确定位（页面上的"全部/推荐"并不存在，属于历史遗留用例）
+    FILTER_TABS = {
+        "政策资讯": ".nav-item:has-text('政策资讯')",
+        "政策解读": ".nav-item:has-text('政策解读')",
+        "行业动态": ".nav-item:has-text('行业动态')",
+    }
+    FILTER_政策资讯 = ".nav-item:has-text('政策资讯')"
+    FILTER_政策解读 = ".nav-item:has-text('政策解读')"
+    FILTER_行业动态 = ".nav-item:has-text('行业动态')"
 
     # ==================== 政策文章 ====================
     POLICY_CARD = "[class*='policy'], [class*='article'], [class*='news'], article, .n-card"
-    POLICY_TITLE = "h3, h2, .title, .name"
+    # 条目标题（内容区主标题），排除简介与日期
+    POLICY_TITLE = (
+        ".industry-policy-content div[class*='text-[#1D2129]'][class*='font-medium']"
+    )
+    POLICY_TITLE_FALLBACK = "h3, h2, .title, .name"
     VIEW_DETAIL_BTN = "text=查看详情"
     VIEW_ALL_BTN = "text=查看全部"
 
@@ -50,7 +60,8 @@ class IndustryPolicyPage(BasePage):
 
     def open(self) -> "IndustryPolicyPage":
         """打开产业政策页面"""
-        self.goto()
+        base = settings.base_url.rstrip("/")
+        self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
     def click_view_all(self) -> None:
@@ -62,40 +73,11 @@ class IndustryPolicyPage(BasePage):
 
     # ==================== 导航操作 ====================
 
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        nav = self.page.locator(f"text={nav_text}").first
-        if nav.is_visible():
-            nav.click()
-            self.wait_for_load()
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        # 如果没提取到，尝试直接通过 URL 判断
-        if not texts:
-            url = self.page.url
-            if "/industryPolicy" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
-
     # ==================== 政策筛选操作 ====================
 
     def click_filter(self, filter_name: str) -> None:
         """点击政策分类筛选"""
-        filter_map = {
-            "政策咨询": self.FILTER_政策咨询,
-            "政策解读": self.FILTER_政策解读,
-            "行业动态": self.FILTER_行业动态,
-            "全部": self.FILTER_全部,
-            "推荐": self.FILTER_推荐,
-        }
-        selector = filter_map.get(filter_name, f"text={filter_name}")
+        selector = self.FILTER_TABS.get(filter_name, f"text={filter_name}")
         filter_btn = self.page.locator(selector).first
         if filter_btn.is_visible():
             filter_btn.click()
@@ -104,7 +86,7 @@ class IndustryPolicyPage(BasePage):
     def get_active_filter(self) -> str:
         """获取当前选中的筛选分类"""
         for filter_name, selector in [
-            ("政策咨询", self.FILTER_政策咨询),
+            ("政策资讯", self.FILTER_政策资讯),
             ("政策解读", self.FILTER_政策解读),
             ("行业动态", self.FILTER_行业动态),
         ]:
@@ -120,14 +102,41 @@ class IndustryPolicyPage(BasePage):
         return self.page.locator(self.POLICY_CARD).count()
 
     def get_policy_titles(self) -> list[str]:
-        """获取所有政策文章标题"""
-        cards = self.page.locator(self.POLICY_CARD)
+        """获取所有政策文章标题
+
+        政策内容区的条目标题类名为 `text-[#1D2129] text-[24px] font-medium`，
+        简介类名为 `content-item-title`，需排除简介与日期。
+        """
         titles = []
+        loc = self.page.locator(self.POLICY_TITLE)
+        for i in range(loc.count()):
+            el = loc.nth(i)
+            if not el.is_visible():
+                continue
+            text = (el.text_content() or "").strip()
+            if text:
+                titles.append(text.replace("\n", " ")[:60])
+        if not titles:
+            loc = self.page.locator(self.POLICY_TITLE_FALLBACK)
+            for i in range(loc.count()):
+                el = loc.nth(i)
+                if not el.is_visible():
+                    continue
+                text = (el.text_content() or "").strip()
+                if text:
+                    titles.append(text.replace("\n", " ")[:60])
+        if titles:
+            return titles
+        cards = self.page.locator(self.POLICY_CARD)
         for i in range(cards.count()):
-            title = cards.nth(i).text_content()
-            if title and title.strip():
-                titles.append(title.strip()[:50])
+            text = (cards.nth(i).text_content() or "").strip()
+            if text:
+                titles.append(text.replace("\n", " ")[:60])
         return titles
+
+    def get_list_titles(self) -> list[str]:
+        """获取列表条目标题（供筛选/分页断言使用）"""
+        return self.get_policy_titles()
 
     def click_first_policy(self) -> None:
         """点击第一篇政策文章"""
@@ -171,8 +180,5 @@ class IndustryPolicyPage(BasePage):
         assert count >= min_count, f"期望政策数量 >= {min_count}，实际为 {count}"
 
     def assert_filter_works(self, filter_name: str) -> None:
-        """断言筛选功能正常"""
-        self.click_filter(filter_name)
-        self.page.wait_for_timeout(1000)
-        count = self.get_policy_count()
-        assert count >= 0, f"筛选 {filter_name} 后政策数量异常"
+        """断言筛选生效（列表非空，且切换后内容变化）"""
+        self.assert_filter_effective(filter_name)

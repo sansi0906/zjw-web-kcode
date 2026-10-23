@@ -13,6 +13,13 @@ class IndustryNewsPage(BasePage):
     PAGE_URL = "/industryNews"
 
     NEWS_CARDS = "div[class*='news'], article, div[class*='card']"
+
+    # ==================== 分类标签 ====================
+    FILTER_TABS = {
+        "行业动态": "button:has-text('行业动态')",
+        "政策资讯": "button:has-text('政策资讯')",
+        "政策解读": "button:has-text('政策解读')",
+    }
     # 移动端新闻卡片选择器
     NEWS_CARDS_MOBILE = (
         "div[class*='news'], article, div[class*='card'], "
@@ -24,12 +31,17 @@ class IndustryNewsPage(BasePage):
     TAB_行业动态 = "text=行业动态"
     TAB_政策资讯 = "text=政策资讯"
     TAB_政策解读 = "text=政策解读"
+    TAB_MAP = {
+        "行业动态": TAB_行业动态,
+        "政策资讯": TAB_政策资讯,
+        "政策解读": TAB_政策解读,
+    }
 
     # 分页
     PAGINATION_INPUT = "input[type='text']"
 
     def open(self) -> IndustryNewsPage:
-        base = settings.env_config.base_url.rstrip("/")
+        base = settings.base_url.rstrip("/")
         self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
@@ -38,6 +50,45 @@ class IndustryNewsPage(BasePage):
         if self.is_mobile():
             return self.page.locator(self.NEWS_CARDS_MOBILE).count()
         return self.page.locator(self.NEWS_CARDS).count()
+
+    def get_news_titles(self) -> list[str]:
+        """获取新闻标题
+
+        产业新闻列表使用 <article> 渲染，每条包含标题 + 简介 + 日期。
+        """
+        cards = self.page.locator("article")
+        titles = []
+        for i in range(cards.count()):
+            el = cards.nth(i)
+            if not el.is_visible():
+                continue
+            text = (el.text_content() or "").strip()
+            if text:
+                titles.append(text.replace("\n", " ")[:60])
+        if titles:
+            return titles
+        fallback = self.page.locator("h2, h3")
+        for i in range(fallback.count()):
+            text = (fallback.nth(i).text_content() or "").strip()
+            if text:
+                titles.append(text.replace("\n", " ")[:60])
+        return titles
+
+    def get_list_titles(self) -> list[str]:
+        """获取列表条目标题（供筛选/分页断言使用）"""
+        return self.get_news_titles()
+
+    def click_tab(self, tab_name: str) -> None:
+        """点击分类标签"""
+        selector = self.FILTER_TABS.get(tab_name, self.TAB_MAP.get(tab_name, f"text={tab_name}"))
+        el = self.page.locator(selector).first
+        if el.is_visible(timeout=3000):
+            el.click()
+            self.page.wait_for_timeout(1200)
+
+    def assert_filter_works(self, filter_name: str) -> None:
+        """断言筛选生效（列表非空，且切换后内容变化）"""
+        self.assert_filter_effective(filter_name)
 
     def click_first_news(self) -> None:
         """点击第一条新闻"""
@@ -75,63 +126,6 @@ class IndustryNewsPage(BasePage):
         # 最后兜底：检查新闻卡片是否存在
         count = self.get_news_count()
         assert count > 0, "未找到产业新闻区域或新闻卡片"
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        if self.is_mobile():
-            try:
-                js_texts = self.page.evaluate("""() => {
-                    const sel = 'a, button, [role="button"]';
-                    const els = Array.from(document.querySelectorAll(sel));
-                    const texts = [];
-                    els.forEach(el => {
-                        const t = (el.textContent || '').trim();
-                        if (t && !texts.includes(t)) texts.push(t);
-                    });
-                    return texts;
-                }""")
-                if js_texts:
-                    return js_texts
-            except Exception:
-                pass
-        navs = self.page.locator(".nav-left a, .header-title a, header a, nav a, .nav-item a")
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        return texts
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        # 移动端导航项可能是 button 或 a，优先点击可见元素
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        # 最后兜底：JS 点击不可见元素
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-            return
-        except Exception:
-            pass
-
-    # ==================== Tab 操作 ====================
 
     def click_tab(self, tab_name: str) -> None:
         """点击Tab切换"""

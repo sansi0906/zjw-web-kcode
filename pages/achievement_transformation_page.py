@@ -28,6 +28,11 @@ class AchievementTransformationPage(BasePage):
     REGISTER_BTN = "text=注册"
 
     # ==================== 成果分类筛选 ====================
+    # 课题/成果 是真正的分类 tab；"科技创新成果" 是板块标题，不是筛选项
+    FILTER_TABS = {
+        "课题": "div[class*='gap-[55px]'] > div:has-text('课题')",
+        "成果": "div[class*='gap-[55px]'] > div:has-text('成果')",
+    }
     FILTER_科技创新成果 = "text=科技创新成果"
     FILTER_课题 = "text=课题"
     FILTER_成果 = "text=成果"
@@ -56,70 +61,21 @@ class AchievementTransformationPage(BasePage):
 
     def open(self) -> "AchievementTransformationPage":
         """打开成果转化页面"""
-        base = settings.env_config.base_url.rstrip("/")
+        base = settings.base_url.rstrip("/")
         self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
     # ==================== 导航操作 ====================
 
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        # 移动端导航项可能是 button 或 a，优先点击可见元素
-        for sel in [f"button:has-text('{nav_text}')", f"text={nav_text}", f"a:has-text('{nav_text}')"]:
-            try:
-                nav = self.page.locator(sel).first
-                if nav.is_visible(timeout=1500):
-                    nav.click()
-                    self.wait_for_load()
-                    return
-            except Exception:
-                continue
-        # 最后兜底：JS 点击不可见元素
-        try:
-            self.page.evaluate(
-                """(text) => {
-                const els = Array.from(document.querySelectorAll('a, button, [role="button"]'));
-                const el = els.find(e => (e.textContent||'').trim() === text);
-                if (el) { el.click(); return true; }
-                return false;
-                }""",
-                nav_text,
-            )
-            self.page.wait_for_timeout(1500)
-            self.wait_for_load()
-            return
-        except Exception:
-            pass
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        if not texts:
-            url = self.page.url
-            if "/achievementTransformation" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
-
     # ==================== 成果筛选操作 ====================
 
     def click_filter(self, filter_name: str) -> None:
         """点击成果分类筛选"""
-        filter_map = {
-            "科技创新成果": self.FILTER_科技创新成果,
-            "课题": self.FILTER_课题,
-            "成果": self.FILTER_成果,
-        }
-        selector = filter_map.get(filter_name)
-        if selector:
-            filter_btn = self.page.locator(selector).first
-            if filter_btn.is_visible():
-                filter_btn.click()
-                self.page.wait_for_timeout(1000)
+        selector = self.FILTER_TABS.get(filter_name, f"text={filter_name}")
+        filter_btn = self.page.locator(selector).first
+        if filter_btn.is_visible(timeout=3000):
+            filter_btn.click()
+            self.page.wait_for_timeout(1000)
 
     def get_active_filter(self) -> str:
         """获取当前选中的筛选分类"""
@@ -153,6 +109,10 @@ class AchievementTransformationPage(BasePage):
             if title and title.strip():
                 titles.append(title.strip()[:50])
         return titles
+
+    def get_list_titles(self) -> list[str]:
+        """获取列表条目标题（供筛选/分页断言使用）"""
+        return self.get_achievement_titles()
 
     def click_first_achievement(self) -> None:
         """点击第一个成果卡片"""
@@ -207,8 +167,5 @@ class AchievementTransformationPage(BasePage):
         assert count >= min_count, f"期望成果数量 >= {min_count}，实际为 {count}"
 
     def assert_filter_works(self, filter_name: str) -> None:
-        """断言筛选功能正常"""
-        self.click_filter(filter_name)
-        self.page.wait_for_timeout(1000)
-        count = self.get_achievement_count()
-        assert count >= 0, f"筛选 {filter_name} 后成果数量异常"
+        """断言筛选生效（列表非空，且切换后内容变化）"""
+        self.assert_filter_effective(filter_name)

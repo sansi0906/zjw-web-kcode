@@ -3,10 +3,12 @@
 """
 from __future__ import annotations
 
+from config.settings import settings
 from pages.base_page import BasePage
 
 
 class IntelligentConstructionPage(BasePage):
+    PAGE_URL = "/intelligentConstruction"
     """智能建造页面"""
 
     # ==================== 顶部导航 ====================
@@ -65,7 +67,8 @@ class IntelligentConstructionPage(BasePage):
 
     def open(self) -> "IntelligentConstructionPage":
         """打开智能建造页面"""
-        self.goto()
+        base = settings.base_url.rstrip("/")
+        self.goto(url=f"{base}{self.PAGE_URL}")
         return self
 
     def click_filter(self, filter_name: str) -> None:
@@ -81,11 +84,8 @@ class IntelligentConstructionPage(BasePage):
             self.page.wait_for_timeout(1000)
 
     def assert_filter_works(self, filter_name: str) -> None:
-        """断言筛选功能正常"""
-        self.click_filter(filter_name)
-        self.page.wait_for_timeout(1000)
-        count = self.get_construction_count()
-        assert count >= 0, f"筛选 {filter_name} 后建造数量异常"
+        """断言筛选生效（智能建造页当前无分类 tab，调用即视为用例设计错误）"""
+        self.assert_filter_effective(filter_name)
 
     def get_construction_count(self) -> int:
         """获取建造卡片数量"""
@@ -123,27 +123,6 @@ class IntelligentConstructionPage(BasePage):
             self.wait_for_load()
 
     # ==================== 导航操作 ====================
-
-    def click_nav_by_text(self, nav_text: str) -> None:
-        """根据文本点击导航链接"""
-        nav = self.page.locator(f"text={nav_text}").first
-        if nav.is_visible():
-            nav.click()
-            self.wait_for_load()
-
-    def get_nav_texts(self) -> list[str]:
-        """获取所有导航链接文本"""
-        navs = self.page.locator(self.NAV_ITEMS)
-        texts = []
-        for i in range(navs.count()):
-            text = navs.nth(i).text_content()
-            if text and text.strip():
-                texts.append(text.strip())
-        if not texts:
-            url = self.page.url
-            if "intelligentConstruction" in url:
-                texts = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
-        return texts
 
     # ==================== 申报操作 ====================
 

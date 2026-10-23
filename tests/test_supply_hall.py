@@ -200,27 +200,27 @@ class TestSupplyHall(BasePageTest):
     @allure.title("土建子分类筛选")
     @allure.severity(allure.severity_level.NORMAL)
     def test_filter_sub_土建(self) -> None:
-        """点击土建子分类"""
+        """点击土建子分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_subcategory("土建")
+        self.page_obj.assert_filter_works("土建")
         self.page_obj.take_screenshot("filter_sub_土建", "info")
 
     @allure.story("子分类筛选")
     @allure.title("装饰装修子分类筛选")
     @allure.severity(allure.severity_level.NORMAL)
     def test_filter_sub_装饰装修(self) -> None:
-        """点击装饰装修子分类"""
+        """点击装饰装修子分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_subcategory("装饰装修")
+        self.page_obj.assert_filter_works("装饰装修")
         self.page_obj.take_screenshot("filter_sub_装饰装修", "info")
 
     @allure.story("子分类筛选")
     @allure.title("电气子分类筛选")
     @allure.severity(allure.severity_level.NORMAL)
     def test_filter_sub_电气(self) -> None:
-        """点击电气子分类"""
+        """点击电气子分类，校验列表内容随之变化"""
         self.page_obj.open()
-        self.page_obj.click_subcategory("电气")
+        self.page_obj.assert_filter_works("电气")
         self.page_obj.take_screenshot("filter_sub_电气", "info")
 
     # ==================== 搜索功能 ===================
