@@ -1257,11 +1257,20 @@ class TestHomePage(BasePageTest):
     @allure.title("页脚ICP链接检查")
     @allure.severity(allure.severity_level.MINOR)
     def test_footer_icp_is_link(self, home_page_shared: HomePage) -> None:
-        """验证ICP备案号为可点击链接"""
+        """验证ICP备案号可点击并跳转到工信部备案查询页"""
         home_page_shared.scroll_to_footer()
-        icp_link = home_page_shared.page.locator("footer a:has-text('ICP'), footer a:has-text('津ICP')").first
-        if not icp_link.is_visible(timeout=2000):
-            pytest.xfail("已知缺陷：页脚ICP备案号为纯文本，缺少超链接")
+        icp = home_page_shared.page.locator(":text('津ICP')").first
+        if not icp.is_visible(timeout=3000):
+            pytest.skip("当前页面未渲染 ICP 备案号")
+        # 点击后应打开工信部备案查询页（新标签页或当前页跳转）
+        with home_page_shared.page.context.expect_page(timeout=5000) as new_page_info:
+            icp.click()
+        new_page = new_page_info.value
+        assert "beian.miit.gov.cn" in new_page.url, (
+            f"ICP 点击后未跳转到工信部备案页，实际 URL: {new_page.url}"
+        )
+        new_page.close()
+        home_page_shared.goto()
 
     @allure.story("Bug追踪")
     @allure.title("检查测试占位符内容")
