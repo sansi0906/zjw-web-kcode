@@ -32,13 +32,11 @@ from pages.industry_news_page import IndustryNewsPage  # noqa: E402
 from pages.key_project_page import KeyProjectsPage  # noqa: E402
 from pages.supply_hall_page import SupplyHallPage  # noqa: E402
 from pages.demand_page import DemandPage  # noqa: E402
-from pages.all_products_page import AllProductsPage  # noqa: E402
 from pages.intelligent_construction_page import IntelligentConstructionPage  # noqa: E402
 from pages.industry_policy_page import IndustryPolicyPage  # noqa: E402
 from pages.industry_association_page import IndustryAssociationPage  # noqa: E402
 from pages.achievement_transformation_page import AchievementTransformationPage  # noqa: E402
 from pages.cloud_service_page import CloudServicePage  # noqa: E402
-from pages.supply_chain_map_page import SupplyChainMapPage  # noqa: E402
 from pages.industrial_service_page import IndustrialServicePage  # noqa: E402
 
 # Playwright 内置设备字典（用于 --device-name 参数）
@@ -272,7 +270,6 @@ _PAGE_FIXTURES = [
     ("industry_demand_page", IndustryDemandPage, "function", "page"),
     ("key_projects_page", KeyProjectsPage, "function", "page"),
     ("industry_news_page", IndustryNewsPage, "function", "page"),
-    ("all_products_page", AllProductsPage, "function", "page"),
     ("intelligent_construction_page", IntelligentConstructionPage, "function", "page"),
     ("key_project_page", KeyProjectsPage, "function", "page"),
     ("industry_policy_page", IndustryPolicyPage, "function", "page"),
@@ -280,7 +277,6 @@ _PAGE_FIXTURES = [
     ("achievement_transformation_page", AchievementTransformationPage, "function", "page"),
     ("cloud_service_page", CloudServicePage, "function", "page"),
     ("industrial_service_page", IndustrialServicePage, "function", "page"),
-    ("supply_chain_map_page", SupplyChainMapPage, "function", "page"),
 ]
 
 
