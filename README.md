@@ -52,11 +52,9 @@ zjw-web-kcode/
 │   ├── bug_review_homepage.md   # 首页缺陷评审
 │   └── h5_test_result.md        # H5 测试结果记录
 ├── scripts/                     # 辅助脚本
-│   ├── generate_bug_list.py     # 从 Allure 结果生成缺陷清单（Markdown）
-│   ├── export_test_cases_xlsx.py # 导出测试用例到 Excel
+│   │   ├── export_test_cases_xlsx.py # 导出测试用例到 Excel
 │   └── (元素提取、深入分析等生成文件 - 已忽略提交)
 ├── run_tests.py                 # 测试运行入口
-├── generate_report.py           # 自定义 HTML 报告生成器
 ├── pytest.ini                   # Pytest 配置
 ├── requirements.txt             # Python 依赖
 ├── .env.example                 # 环境变量模板
@@ -133,7 +131,6 @@ allure generate reports/allure-results -o reports/html --clean
 也可使用自定义报告生成器：
 
 ```bash
-python generate_report.py
 ```
 
 ## 架构特点
@@ -173,8 +170,7 @@ python generate_report.py
 - 失败自动截图并附加到 Allure 报告
 - 支持全部测试截图模式（`--screenshot-all`）
 - Allure 报告自动记录环境信息、执行时长、截图
-- `generate_report.py` 生成自定义 HTML 报告（全局统计、用例明细、失败截图、分类筛选）
-- `scripts/generate_bug_list.py` 从 Allure 结果生成缺陷清单（Markdown）
+- `run_tests.py` 一键运行测试并生成 Allure HTML 报告 + 自定义 HTML 报告（全局统计、用例明细、失败截图、分类筛选）+ Markdown 缺陷清单
 
 ### 7. 自动化缺陷追踪
 
