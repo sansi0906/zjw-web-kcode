@@ -233,7 +233,7 @@ class TestXxx(BasePageTest):
 | 通过 | 393 |
 | 失败 | 0 |
 | 跳过 | 46 |
-| 预期失败（xfail） | 7 |
+| 预期失败（xfail） | 6 |
 | 全量耗时 | 约 25 分钟（配置优化前约 38 分钟） |
 
 ### 跳过用例分布（均为有意跳过）
@@ -257,7 +257,6 @@ class TestXxx(BasePageTest):
 | `test_no_placeholder_content` | 测试环境残留占位文案 |
 | `test_images_alt_text` | 部分内容图片缺少 alt |
 | `test_merchant_images_alt` | 商家图片缺少 alt |
-| `test_footer_icp_is_link` | 页脚 ICP 备案号为纯文本，缺少超链接 |
 | `test_carousel_has_nav_arrows` | 轮播图缺少前后导航箭头 |
 | `test_back_to_top_exists` | 首页缺少返回顶部按钮 |
 
