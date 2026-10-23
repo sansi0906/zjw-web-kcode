@@ -13,7 +13,6 @@ from typing import Optional
 import allure
 from playwright.sync_api import Page, Locator, expect
 from urllib.parse import urlparse
-from collections import Counter
 
 from config.settings import settings
 from utils.browser_helpers import wait_for_network_idle

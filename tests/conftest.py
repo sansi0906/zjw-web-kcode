@@ -20,7 +20,6 @@ import yaml
 from playwright.sync_api import Browser, Page, sync_playwright
 
 from config.settings import ENV_CHOICES, settings
-from utils.browser_helpers import wait_for_network_idle
 
 sys.stdout.reconfigure(encoding="utf-8")
 
