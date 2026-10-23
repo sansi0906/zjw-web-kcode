@@ -293,3 +293,9 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
                 .map(i => (i.getAttribute('src') || '').split('/').pop().substring(0, 60))"""
         )
 
+
+
+    def assert_no_broken_images(self) -> None:
+        """断言页面无加载失败的图片"""
+        broken = self.get_broken_images()
+        assert not broken, f"发现加载失败的图片: {broken}"
