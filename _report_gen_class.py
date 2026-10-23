@@ -749,30 +749,3 @@ class TestReportGenerator:
             rows.append(row)
         
         return "\n".join(rows)
-
-
-def main():
-    """主函数"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="生成测试报告")
-    parser.add_argument("--tester", default="", help="测试人员姓名")
-    parser.add_argument("--remark", default="", help="测试备注")
-    parser.add_argument("--reports-dir", default=None, help="报告目录")
-    
-    args = parser.parse_args()
-    
-    generator = TestReportGenerator(args.reports_dir)
-    generator.parse_allure_results()
-    
-    output_file = generator.generate_html_report(
-        tester=args.tester,
-        remark=args.remark
-    )
-    
-    print(f"\n报告生成完成!")
-    print(f"文件路径: {output_file}")
-
-
-if __name__ == "__main__":
-    main()
