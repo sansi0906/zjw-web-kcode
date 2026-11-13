@@ -148,7 +148,13 @@ class SupplyHallPage(BasePage):
                     el.click(timeout=5000)
                 except Exception:
                     self._js_click_by_text(cat_name)
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=3000)
+                except Exception:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                    except Exception:
+                        pass
             else:
                 self._js_click_by_text(cat_name)
 
@@ -174,7 +180,13 @@ class SupplyHallPage(BasePage):
                     el.click(timeout=5000)
                 except Exception:
                     self._js_click_by_text(sub_name)
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=3000)
+                except Exception:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                    except Exception:
+                        pass
             else:
                 self._js_click_by_text(sub_name)
 
@@ -190,7 +202,10 @@ class SupplyHallPage(BasePage):
                 }""",
                 text,
             )
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -200,62 +215,101 @@ class SupplyHallPage(BasePage):
                 self.CAT_工程机械, self.CAT_劳务用工]
         count = 0
         for sel in cats:
-            if self.page.locator(sel).first.is_visible():
+            if self.first_visible(sel) is not None:
                 count += 1
         return count
 
     def fill_search(self, text: str) -> None:
         """输入搜索关键词"""
-        el = self.page.locator(self.SEARCH_INPUT).first
+        el = self.visible_locator(self.SEARCH_INPUT)
         if el.is_visible():
             el.fill(text)
 
     def click_search(self) -> None:
         """点击搜索按钮"""
-        btn = self.page.locator(self.SEARCH_BTN).first
+        btn = self.visible_locator(self.SEARCH_BTN)
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_reset(self) -> None:
         """点击重置按钮"""
         btn = self.page.locator(self.RESET_BTN).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_publish(self) -> None:
         """点击发布商品按钮"""
         btn = self.page.locator(self.FLOAT_PUBLISH).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_inquiry(self) -> None:
         """点击求购询价按钮"""
         btn = self.page.locator(self.FLOAT_INQUIRY).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_customer_service(self) -> None:
         """点击联系客服按钮"""
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报按钮"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     # ==================== 断言辅助 ====================
 
@@ -335,20 +389,64 @@ class SupplyHallPage(BasePage):
         return stats
 
     def assert_prices_displayed(self) -> None:
-        """断言商品价格信息正常展示"""
+        """断言商品价格/询价信息正常展示（部分商品为询价/面议）"""
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
         price_locators = [
-            self.page.locator("text=/¥\\d+/"),
-            self.page.locator("text=/￥\\d+/"),
+            self.page.locator(r"text=/¥\s*\d+/"),
+            self.page.locator(r"text=/￥\s*\d+/"),
+            self.page.locator(r"text=/\d+(\.\d+)?\s*元/"),
+            self.page.locator("text=询价"),
+            self.page.locator("text=面议"),
             self.page.locator("[class*='price']"),
             self.page.locator("[class*='amount']"),
+            self.page.locator("[class*='Price']"),
         ]
-        for p in price_locators:
-            if p.count() > 0:
+        for loc in price_locators:
+            try:
+                visible = self.first_visible(loc) if isinstance(loc, str) else None
+                if visible is not None:
+                    return
+                if hasattr(loc, "count") and loc.count() > 0 and loc.first.is_visible(timeout=800):
+                    return
+            except Exception:
+                try:
+                    if hasattr(loc, "count") and loc.count() > 0:
+                        return
+                except Exception:
+                    pass
+        # 兜底：商品卡片内可见文本包含询价/面议/¥/元
+        try:
+            has_price_text = self.page.evaluate(
+                """() => {
+                const cards = document.querySelectorAll('article, [class*="supply-item"], [class*="product-card"], [class*="goods-card"], [class*="item-card"]');
+                const re = /¥|￥|\\d+\\s*元|询价|面议/;
+                for (const c of cards) {
+                  const r = c.getBoundingClientRect();
+                  const s = getComputedStyle(c);
+                  if (r.width <= 0 || r.height <= 0 || s.visibility === 'hidden' || s.display === 'none') continue;
+                  if (re.test(c.innerText || c.textContent || '')) return true;
+                }
+                return false;
+                }"""
+            )
+            if has_price_text:
                 return
-        product_count = self.page.locator(self.PRODUCT_CARDS).count()
+        except Exception:
+            pass
+        product_count = 0
+        try:
+            product_count = self.page.locator(self.PRODUCT_CARDS).count()
+        except Exception:
+            pass
         if product_count == 0:
             pytest.skip("未找到供应商品卡片，跳过价格检查")
-        pytest.skip(f"找到 {product_count} 个供应商品但未找到价格元素，可能为环境数据问题")
+        pytest.skip(f"供应商品({product_count})未展示可识别价格/询价元素，可能为非标或数据差异")
 
     def has_pagination(self) -> bool:
         """检查是否存在分页控件"""

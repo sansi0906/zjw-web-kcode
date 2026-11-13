@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 重点项目页面字体一致性测试
 """
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.key_project_page import KeyProjectsPage
 
+
+pytestmark = [pytest.mark.regression]
 
 @allure.feature("重点项目字体一致性")
 class TestKeyProjectFonts(BasePageTest):
@@ -23,10 +26,11 @@ class TestKeyProjectFonts(BasePageTest):
     def test_kp_project_title_font_consistency(self) -> None:
         """验证重点项目标题字体样式一致"""
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         title_texts = ["胡家园学校校舍修缮工程施工", "天津外国语大学蓟州外国语学校项目弱电智能化工程", "幸福里住宅小区电力配套EPC工程", "天津南开学校教育集团新建高中项目监理"]
-        self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in title_texts:
@@ -55,10 +59,11 @@ class TestKeyProjectFonts(BasePageTest):
     def test_kp_filter_tab_font_consistency(self) -> None:
         """验证重点项目筛选Tab字体样式一致"""
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         tab_texts = ["房建项目", "市政项目", "其他项目"]
-        self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in tab_texts:
@@ -86,7 +91,10 @@ class TestKeyProjectFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_kp_desc_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         desc_texts = ["招标施工天津市", "天津市", "胡家园学校校舍修缮工程施工招标施工天津市"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}

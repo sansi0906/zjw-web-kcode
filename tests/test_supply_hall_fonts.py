@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import allure
 import pytest
 from pages.base_page import BasePage
 from pages.supply_hall_page import SupplyHallPage
 
+
+pytestmark = [pytest.mark.regression]
 
 @allure.feature("字体一致性")
 @allure.story("供应大厅页面")

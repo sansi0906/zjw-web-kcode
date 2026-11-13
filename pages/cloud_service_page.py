@@ -64,7 +64,13 @@ class CloudServicePage(BasePage):
         btn = self.page.locator(selector).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def assert_filter_works(self, filter_name: str) -> None:
         """断言筛选生效（云服务页当前无分类 tab，调用即视为用例设计错误）"""
@@ -121,21 +127,36 @@ class CloudServicePage(BasePage):
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 页脚操作 ====================
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     # ==================== 断言辅助 ====================
 

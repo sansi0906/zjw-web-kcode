@@ -14,6 +14,19 @@ import os
 import sys
 from pathlib import Path
 
+# 统一 UTF-8 输出，减少 Windows 终端乱码
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import allure
 import pytest
 import yaml
@@ -21,19 +34,17 @@ from playwright.sync_api import Browser, Page, sync_playwright
 
 from config.settings import ENV_CHOICES, settings
 
-sys.stdout.reconfigure(encoding="utf-8")
-
 # ==================== 页面对象导入 ====================
 
 from pages.base_page import BasePage  # noqa: E402
 from pages.home_page import HomePage  # noqa: E402
-from pages.industry_demand_page import IndustryDemandPage  # noqa: E402
 from pages.industry_news_page import IndustryNewsPage  # noqa: E402
 from pages.key_project_page import KeyProjectsPage  # noqa: E402
 from pages.supply_hall_page import SupplyHallPage  # noqa: E402
+from pages.supply_hall_search_result_page import SupplyHallSearchResultPage  # noqa: E402
 from pages.demand_page import DemandPage  # noqa: E402
+from pages.exhibition_page import ExhibitionPage  # noqa: E402
 from pages.intelligent_construction_page import IntelligentConstructionPage  # noqa: E402
-from pages.industry_policy_page import IndustryPolicyPage  # noqa: E402
 from pages.industry_association_page import IndustryAssociationPage  # noqa: E402
 from pages.achievement_transformation_page import AchievementTransformationPage  # noqa: E402
 from pages.cloud_service_page import CloudServicePage  # noqa: E402
@@ -46,16 +57,131 @@ with sync_playwright() as _pw:
 # ==================== 测试数据加载 ====================
 
 
+REQUIRED_TOP_LEVEL_KEYS = {
+    "environments",
+    "page_titles",
+    "font_tests",
+    "navigation",
+    "filter_tabs",
+    "search_keywords",
+    "page_assertions",
+}
+ALLOWED_STYLE_KEYS = {"fontFamily", "fontSize", "fontWeight", "color", "lineHeight", "letterSpacing"}
+KNOWN_PAGE_FIXTURES = {
+    "home_page",
+    "supply_hall_page",
+    "demand_page",
+    "key_project_page",
+    "key_projects_page",
+    "industry_news_page",
+    "intelligent_construction_page",
+    "industry_association_page",
+    "achievement_transformation_page",
+    "cloud_service_page",
+    "industrial_service_page",
+    "supply_hall_search_result_page",
+    "h5_supply_hall_search_result_page",
+    "exhibition_page",
+}
+
+
+def _validate_test_data(data: dict) -> None:
+    """校验 test_data.yaml 关键结构；对已存在顶层 key 做严格校验，缺失不阻断加载以兼容旧数据。"""
+    if not isinstance(data, dict):
+        raise ValueError("test_data.yaml 根节点必须是字典")
+    if "font_tests" in data:
+        if not isinstance(data["font_tests"], dict):
+            raise ValueError("test_data.yaml.font_tests 必须是字典")
+        for page_name, modules in data["font_tests"].items():
+            if not isinstance(modules, dict):
+                raise ValueError(f"test_data.yaml.font_tests.{page_name} 必须是字典")
+            for mod_name, cfg in modules.items():
+                for field in ("texts", "selector", "style_keys"):
+                    if field not in cfg:
+                        raise ValueError(
+                            f"test_data.yaml.font_tests.{page_name}.{mod_name} 缺少必填字段: {field}"
+                        )
+                if not isinstance(cfg["texts"], list) or len(cfg["texts"]) < 1:
+                    raise ValueError(
+                        f"test_data.yaml.font_tests.{page_name}.{mod_name}.texts 必须是非空列表"
+                    )
+                if not isinstance(cfg["style_keys"], list) or len(cfg["style_keys"]) < 1:
+                    raise ValueError(
+                        f"test_data.yaml.font_tests.{page_name}.{mod_name}.style_keys 必须是非空列表"
+                    )
+                selector = cfg["selector"]
+                if not isinstance(selector, str) or not selector:
+                    raise ValueError(
+                        f"test_data.yaml.font_tests.{page_name}.{mod_name}.selector 必须是非空字符串"
+                    )
+                if "{text}" not in selector and any("{text}" in t for t in cfg["texts"] if isinstance(t, str)):
+                    raise ValueError(
+                        f"test_data.yaml.font_tests.{page_name}.{mod_name}.selector 缺少 {{text}} 占位符"
+                    )
+                bad_keys = [k for k in cfg["style_keys"] if k not in ALLOWED_STYLE_KEYS]
+                if bad_keys:
+                    raise ValueError(
+                        f"test_data.yaml.font_tests.{page_name}.{mod_name}.style_keys 包含不支持的键: {bad_keys}；允许: {sorted(ALLOWED_STYLE_KEYS)}"
+                    )
+                for opt in ("min_visible",):
+                    if opt in cfg and (not isinstance(cfg[opt], int) or cfg[opt] < 1):
+                        raise ValueError(f"test_data.yaml.font_tests.{page_name}.{mod_name}.{opt} 必须是 >=1 的整数")
+                for opt in ("scroll_into_view", "optional"):
+                    if opt in cfg and not isinstance(cfg[opt], bool):
+                        raise ValueError(f"test_data.yaml.font_tests.{page_name}.{mod_name}.{opt} 必须是布尔值")
+    for key in ("filter_switch_pairs", "pagination_pages"):
+        if key in data:
+            if not isinstance(data[key], list):
+                raise ValueError(f"test_data.yaml.{key} 必须是列表")
+            for i, item in enumerate(data[key]):
+                if not isinstance(item, dict):
+                    raise ValueError(f"test_data.yaml.{key}[{i}] 必须是字典")
+                fx = item.get("fixture")
+                if fx and fx not in KNOWN_PAGE_FIXTURES:
+                    raise ValueError(f"test_data.yaml.{key}[{i}].fixture 引用了未知 fixture: {fx}")
+                if key == "filter_switch_pairs":
+                    for req in ("page", "fixture", "a", "b"):
+                        if req not in item:
+                            raise ValueError(f"test_data.yaml.{key}[{i}] 缺少字段: {req}")
+                if key == "pagination_pages":
+                    for req in ("page", "fixture"):
+                        if req not in item:
+                            raise ValueError(f"test_data.yaml.{key}[{i}] 缺少字段: {req}")
+    nav = data.get("navigation")
+    if nav is not None and not isinstance(nav, dict):
+        raise ValueError("test_data.yaml.navigation 必须是字典")
+    if isinstance(nav, dict):
+        home_nav = (nav.get("home_page") or {}).get("nav_links")
+        if home_nav is not None:
+            if not isinstance(home_nav, list):
+                raise ValueError("test_data.yaml.navigation.home_page.nav_links 必须是列表")
+            for i, link in enumerate(home_nav):
+                for req in ("text", "url_fragment"):
+                    if not isinstance(link, dict) or req not in link:
+                        raise ValueError(f"test_data.yaml.navigation.home_page.nav_links[{i}] 缺少字段: {req}")
+    if "search_keywords" in data and not isinstance(data["search_keywords"], dict):
+        raise ValueError("test_data.yaml.search_keywords 必须是字典")
+
+
 def load_test_data() -> dict:
     """加载 YAML 测试数据"""
     data_file = Path(__file__).parent.parent / "data" / "test_data.yaml"
     if data_file.exists():
         with open(data_file, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
+            data = yaml.safe_load(f) or {}
+        _validate_test_data(data)
+        return data
     return {}
 
 
 TEST_DATA = load_test_data()
+
+
+@pytest.fixture(scope="session")
+def test_data() -> dict:
+    """统一的 YAML 测试数据 fixture，供数据驱动测试注入。"""
+    return TEST_DATA
+
 
 # ==================== 目录初始化 ====================
 
@@ -107,6 +233,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
                      help="Playwright 设备名称（如 'iPhone 12', 'iPhone 12 Pro', 'Pixel 5', 'iPad', 'Samsung Galaxy S10'）")
     parser.addoption("--mobile", action="store_true", default=False,
                      help="等价于 --platform h5（快捷参数）")
+    parser.addoption("--visual", action="store_true", default=False,
+                     help="启用视觉回归对比（默认关闭，需先生成基线）")
+    parser.addoption("--visual-baseline", action="store", default="reports/visual/baseline",
+                     help="视觉回归基线目录")
+    parser.addoption("--visual-threshold", type=float, default=0.01,
+                     help="视觉差异容忍比例（0~1，默认 1%%）")
 
 
 # ==================== Pytest 配置初始化 ====================
@@ -157,9 +289,20 @@ def pytest_configure(config: pytest.Config) -> None:
     config.option.reruns = settings.reruns
     config.option.reruns_delay = settings.reruns_delay
 
-    # 写入 Allure 环境信息
+    # xdist 并行安全：默认策略为“隔离子集可并行”。共享 module-scope 页面与有状态用例必须显式标记 serial，
+    # 使用 -n 时请排除：`pytest -n auto -m "not serial"`；或仅对 function-scope/无状态用例子集并行。
+    if getattr(config.option, "numprocesses", None) not in (None, 0, 1):
+        if not config.option.markexpr:
+            print(
+                "\n[警告] 检测到 pytest-xdist 并行执行且未指定 -m。"
+                "存在 serial 共享页面/有状态用例，建议使用: pytest -n auto -m \"not serial\"\n"
+            )
+
+    # 写入 Allure 环境信息（便于报告可观测性）
     env_file = Path(settings.reports_dir) / "allure-results" / "environment.properties"
     env_file.parent.mkdir(parents=True, exist_ok=True)
+    numproc = getattr(config.option, "numprocesses", None)
+    marker_expr = getattr(config.option, "markexpr", "") or ""
     with open(env_file, "w", encoding="utf-8") as f:
         f.write(f"环境={settings.env_name}\n")
         f.write(f"测试地址={settings.base_url}\n")
@@ -171,6 +314,8 @@ def pytest_configure(config: pytest.Config) -> None:
         f.write(f"视口={settings.viewport_width}x{settings.viewport_height}\n")
         f.write(f"测试人员={settings.tester or '未指定'}\n")
         f.write(f"备注={settings.remark or '无'}\n")
+        f.write(f"xdist_workers={numproc if numproc is not None else 'off'}\n")
+        f.write(f"marker_expr={marker_expr or '(none)'}\n")
 
 
 # ==================== 浏览器 Fixtures ====================
@@ -228,6 +373,22 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     page.close()
 
 
+@pytest.fixture(scope="function")
+def h5_page(browser: Browser) -> Page:
+    """Function 级 H5 Page（强制移动端设备仿真，用于 @pytest.mark.h5 用例）"""
+    device_name = "iPhone 12" if "iPhone 12" in PLAYWRIGHT_DEVICES else ""
+    if device_name:
+        device = PLAYWRIGHT_DEVICES.get(device_name)
+        if device:
+            page = browser.new_page(**device)
+        else:
+            page = browser.new_page(viewport={"width": 375, "height": 812}, is_mobile=True, has_touch=True)
+    else:
+        page = browser.new_page(viewport={"width": 375, "height": 812}, is_mobile=True, has_touch=True)
+    yield page
+    page.close()
+
+
 @pytest.fixture(scope="module")
 def shared_page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     """
@@ -249,7 +410,13 @@ def shared_page(browser: Browser, request: pytest.FixtureRequest) -> Page:
                 close_btn.click()
             else:
                 page.keyboard.press("Escape")
-            page.wait_for_timeout(1000)
+            try:
+                dialog.wait_for(state="hidden", timeout=3000)
+            except Exception:
+                try:
+                    page.wait_for_load_state("domcontentloaded", timeout=2000)
+                except Exception:
+                    pass
     except Exception:
         pass
 
@@ -264,15 +431,17 @@ def shared_page(browser: Browser, request: pytest.FixtureRequest) -> Page:
 # depends_on: 依赖的 page fixture 名称，默认 "page"
 _PAGE_FIXTURES = [
     ("home_page", HomePage, "function", "page"),
+    ("h5_home_page", HomePage, "function", "h5_page"),
     ("home_page_shared", HomePage, "module", "shared_page"),
     ("supply_hall_page", SupplyHallPage, "function", "page"),
+    ("supply_hall_search_result_page", SupplyHallSearchResultPage, "function", "page"),
+    ("h5_supply_hall_search_result_page", SupplyHallSearchResultPage, "function", "h5_page"),
     ("demand_page", DemandPage, "function", "page"),
-    ("industry_demand_page", IndustryDemandPage, "function", "page"),
+    ("exhibition_page", ExhibitionPage, "function", "page"),
     ("key_projects_page", KeyProjectsPage, "function", "page"),
     ("industry_news_page", IndustryNewsPage, "function", "page"),
     ("intelligent_construction_page", IntelligentConstructionPage, "function", "page"),
     ("key_project_page", KeyProjectsPage, "function", "page"),
-    ("industry_policy_page", IndustryPolicyPage, "function", "page"),
     ("industry_association_page", IndustryAssociationPage, "function", "page"),
     ("achievement_transformation_page", AchievementTransformationPage, "function", "page"),
     ("cloud_service_page", CloudServicePage, "function", "page"),
@@ -335,10 +504,23 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
 
     if report.when == "call":
         page_obj = getattr(item, "page", None)
+        if not page_obj:
+            try:
+                page_obj = item.funcargs.get("page") or item.funcargs.get("shared_page")
+            except Exception:
+                page_obj = None
         if page_obj:
             screenshot_all = item.config.getoption("--screenshot-all", default=False)
             if report.failed and settings.screenshot_on_failure:
                 _take_screenshot(page_obj, item, "failed")
+                try:
+                    allure.attach(
+                        str(getattr(page_obj, "url", "")),
+                        name="失败时URL",
+                        attachment_type=allure.attachment_type.TEXT,
+                    )
+                except Exception:
+                    pass
             elif screenshot_all:
                 _take_screenshot(page_obj, item, "passed")
 
@@ -364,20 +546,57 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 # ==================== 测试用例执行顺序 ====================
 
+_H5_PAGE_FIXTURES = [
+    ("h5_supply_hall_page", SupplyHallPage, "h5_page"),
+    ("h5_key_project_page", KeyProjectsPage, "h5_page"),
+    ("h5_industry_news_page", IndustryNewsPage, "h5_page"),
+    ("h5_demand_page", DemandPage, "h5_page"),
+    ("h5_exhibition_page", ExhibitionPage, "h5_page"),
+    ("h5_achievement_transformation_page", AchievementTransformationPage, "h5_page"),
+    ("h5_industry_association_page", IndustryAssociationPage, "h5_page"),
+    ("h5_cloud_service_page", CloudServicePage, "h5_page"),
+    ("h5_intelligent_construction_page", IntelligentConstructionPage, "h5_page"),
+    ("h5_industrial_service_page", IndustrialServicePage, "h5_page"),
+]
+
+
+def _make_h5_page_fixture(name: str, cls: type, page_fixture: str):
+    @pytest.fixture(scope="function")
+    def _fixture(request):
+        po = cls(request.getfixturevalue(page_fixture))
+        po.open()
+        return po
+    _fixture.__name__ = name
+    return _fixture
+
+
+for _name, _cls, _page in _H5_PAGE_FIXTURES:
+    globals()[_name] = _make_h5_page_fixture(_name, _cls, _page)
+    KNOWN_PAGE_FIXTURES.add(_name)
+
+
 TEST_ORDER = [
     "test_homepage_full.py",      # 单页快速模式，必须第一个执行
     "test_key_projects.py",
     "test_industry_news.py",
-    "test_industry_demand.py",
     "test_achievement_transformation.py",
     "test_cloud_service.py",
-    "test_all_products.py",
     "test_supply_hall.py",
 ]
 
 
-def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
-    """自定义测试用例执行顺序"""
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """自定义测试用例执行顺序，并移除不适用的通用用例"""
+    selected: list[pytest.Item] = []
+    for item in items:
+        if (
+            item.name == "test_nav_active_state"
+            and getattr(getattr(item, "cls", None), "NAV_ACTIVE_STATE_APPLICABLE", True) is False
+        ):
+            continue
+        selected.append(item)
+    items[:] = selected
+
     def get_order(item: pytest.Item) -> int:
         filename = os.path.basename(item.location[0])
         if filename in TEST_ORDER:

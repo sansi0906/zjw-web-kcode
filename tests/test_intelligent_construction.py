@@ -12,6 +12,11 @@ from tests.base_page_test import BasePageTest
 from pages.intelligent_construction_page import IntelligentConstructionPage
 
 
+import pytest
+from utils.ui_quality import assert_console_clean, assert_no_placeholder_content
+
+pytestmark = [pytest.mark.regression]
+
 @allure.feature("智能建造页面")
 class TestIntelligentConstruction(BasePageTest):
     """智能建造页面测试用例"""
@@ -22,6 +27,24 @@ class TestIntelligentConstruction(BasePageTest):
     # ==================== 通用测试（BasePageTest 自动继承） ====================
 
     # ==================== 建造筛选测试 ===================
+
+
+    # ==================== 页面健康度（配置驱动，可扩展） ===================
+
+    @allure.story("页面健康度")
+    @allure.title("控制台无未知错误")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_console_errors(self, test_data) -> None:
+        self.page_obj.open()
+        assert_console_clean(self.page_obj.page, test_data, page_key="intelligent_construction")
+
+    @allure.story("页面健康度")
+    @allure.title("无未知测试占位符内容")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_placeholder_content(self, test_data) -> None:
+        self.page_obj.open()
+        assert_no_placeholder_content(self.page_obj.page, test_data, page_key="intelligent_construction")
+
 
     @allure.story("建造筛选")
     @allure.title("全部建造筛选")

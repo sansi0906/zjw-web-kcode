@@ -20,7 +20,13 @@ class IndustrialServicePage(BasePage):
     def open(self) -> IndustrialServicePage:
         """打开首页并定位到产业化服务模块"""
         self.goto()
-        self.page.wait_for_timeout(2000)
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
         return self
 
     def assert_page_loaded(self) -> None:

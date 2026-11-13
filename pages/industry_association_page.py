@@ -85,14 +85,26 @@ class IndustryAssociationPage(BasePage):
         btn = self.page.locator(self.SEARCH_BTN).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_reset(self) -> None:
         """点击重置按钮"""
         btn = self.page.locator(self.RESET_BTN).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def jump_to_page(self, page_num: int) -> None:
         """跳转到指定页"""
@@ -125,7 +137,13 @@ class IndustryAssociationPage(BasePage):
                     filter_btn.click()
                 except Exception:
                     self._js_click_by_text(filter_name)
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=5000)
+                except Exception:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                    except Exception:
+                        pass
 
     def _js_click_by_text(self, text: str) -> None:
         """通过文本内容用 JS 点击元素"""
@@ -145,10 +163,22 @@ class IndustryAssociationPage(BasePage):
                 close_btn = modal.locator(".n-dialog__close, .n-modal__close, [class*='close']:visible").first
                 if close_btn.is_visible(timeout=1000):
                     close_btn.click()
-                    self.page.wait_for_timeout(1000)
+                    try:
+                        modal.wait_for(state="hidden", timeout=3000)
+                    except Exception:
+                        try:
+                            self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                        except Exception:
+                            pass
                 else:
                     self.page.keyboard.press("Escape")
-                    self.page.wait_for_timeout(1000)
+                    try:
+                        modal.wait_for(state="hidden", timeout=3000)
+                    except Exception:
+                        try:
+                            self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                        except Exception:
+                            pass
         except Exception:
             pass
 
@@ -204,21 +234,36 @@ class IndustryAssociationPage(BasePage):
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 页脚操作 ====================
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     # ==================== 断言辅助 ====================
 

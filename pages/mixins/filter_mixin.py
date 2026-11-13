@@ -22,11 +22,13 @@ class FilterMixin:
         if not el.is_visible(timeout=3000):
             raise AssertionError(f"筛选项 '{label}' 在页面上不存在（选择器 {selector}）")
         el.click()
-        self.page.wait_for_timeout(1500)
         try:
-            self.page.wait_for_load_state("domcontentloaded", timeout=5000)
+            self.page.wait_for_load_state("networkidle", timeout=5000)
         except Exception:
-            pass
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=2000)
+            except Exception:
+                pass
         return self.get_list_titles()
 
     def _prepare_filter(self, label: str) -> None:
@@ -39,7 +41,13 @@ class FilterMixin:
         except Exception:
             pass
         self.open_filter_source()
-        self.page.wait_for_timeout(1500)
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=2000)
+            except Exception:
+                pass
 
     def open_filter_source(self) -> None:
         """打开筛选所在页面（子类可覆盖，例如供应大厅筛选在搜索页）"""
@@ -72,8 +80,11 @@ class FilterMixin:
             if el is None:
                 continue
             border = el.locator(".active-border")
-            if border.count() and border.first.is_visible():
-                return label
+            try:
+                if border.count() and border.first.is_visible():
+                    return label
+            except Exception:
+                continue
 
         for label in labels:
             el = self._filter_element(label)
@@ -97,24 +108,33 @@ class FilterMixin:
 
     @staticmethod
     def _is_styled_active(el) -> bool:
-        """根据计算样式判断筛选项是否为选中态
+        """根据计算样式/类名判断筛选项是否为选中态
 
-        站点使用品牌蓝 #1653FF 文字、浅蓝 #E4F1FF 底色、蓝色渐变底 + 白字
-        三种方式标记选中项。
+        站点可能使用品牌蓝文字、浅蓝底色、渐变底+白字、下划线、Naive/Element active 类等。
         """
         try:
-            return bool(el.evaluate(
-                """el => {
-                    const cs = getComputedStyle(el);
-                    const activeBlue = 'rgb(22, 83, 255)';
-                    const activeBg = 'rgb(228, 241, 255)';
-                    if (cs.color === activeBlue) return true;
-                    if (cs.backgroundColor === activeBg) return true;
-                    const bgImage = cs.backgroundImage || '';
-                    if (bgImage.includes('gradient') && cs.color === 'rgb(255, 255, 255)') return true;
-                    return false;
-                }"""
-            ))
+            return bool(
+                el.evaluate(
+                    """el => {
+                        const cls = (el.className || '').toString();
+                        if (/active|selected|--checked|--active/i.test(cls)) return true;
+                        const aria = (el.getAttribute('aria-selected') || el.getAttribute('aria-pressed') || '').toLowerCase();
+                        if (aria === 'true') return true;
+                        const parentCls = ((el.parentElement && el.parentElement.className) || '').toString();
+                        if (/active|selected/i.test(parentCls)) return true;
+                        const cs = getComputedStyle(el);
+                        const activeBlue = 'rgb(22, 83, 255)';
+                        const activeBg = 'rgb(228, 241, 255)';
+                        if (cs.color === activeBlue) return true;
+                        if (cs.backgroundColor === activeBg) return true;
+                        const bgImage = cs.backgroundImage || '';
+                        if (bgImage.includes('gradient') && cs.color === 'rgb(255, 255, 255)') return true;
+                        const fw = parseInt(cs.fontWeight || '400', 10);
+                        if (!Number.isNaN(fw) && fw >= 600 && (cs.color === activeBlue || cs.borderBottomWidth !== '0px' && cs.borderBottomStyle !== 'none')) return true;
+                        return false;
+                    }"""
+                )
+            )
         except Exception:
             return False
 

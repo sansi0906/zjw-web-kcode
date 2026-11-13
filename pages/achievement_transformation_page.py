@@ -75,7 +75,13 @@ class AchievementTransformationPage(BasePage):
         filter_btn = self.page.locator(selector).first
         if filter_btn.is_visible(timeout=3000):
             filter_btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def get_active_filter(self) -> str:
         """获取当前选中的筛选分类"""
@@ -134,21 +140,36 @@ class AchievementTransformationPage(BasePage):
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 页脚操作 ====================
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     # ==================== 断言辅助 ====================
 

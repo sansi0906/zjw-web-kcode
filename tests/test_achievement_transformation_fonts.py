@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 成果转化页面字体一致性测试
 """
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.achievement_transformation_page import AchievementTransformationPage
 
+
+pytestmark = [pytest.mark.regression]
 
 @allure.feature("成果转化字体一致性")
 class TestAchievementTransformationFonts(BasePageTest):
@@ -23,10 +26,11 @@ class TestAchievementTransformationFonts(BasePageTest):
     def test_at_project_title_font_consistency(self) -> None:
         """验证成果转化项目标题字体样式一致"""
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         title_texts = ["复杂环境下适应性深基坑智能建造技术的研发与应用", "轨道交通装配式连续梁产业化关键技术研究"]
-        self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in title_texts:
@@ -55,10 +59,11 @@ class TestAchievementTransformationFonts(BasePageTest):
     def test_at_institution_name_font_consistency(self) -> None:
         """验证成果转化机构名称字体样式一致"""
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         name_texts = ["天津城建大学", "天津大学", "国土学院", "河北工业大学"]
-        self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in name_texts:
@@ -86,7 +91,10 @@ class TestAchievementTransformationFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_at_company_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         name_texts = [
             "中国建筑第六工程局有限公司",
             "中国铁建大桥局集团有限公司",
@@ -120,7 +128,10 @@ class TestAchievementTransformationFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_at_tech_tag_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         tag_texts = [
             "装配式建筑智能BIM设计与优化",
             "建筑智能数字化设计",

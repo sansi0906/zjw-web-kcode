@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 云服务页面字体一致性测试
 """
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.cloud_service_page import CloudServicePage
 
+
+pytestmark = [pytest.mark.regression]
 
 @allure.feature("云服务字体一致性")
 class TestCloudServiceFonts(BasePageTest):
@@ -23,10 +26,11 @@ class TestCloudServiceFonts(BasePageTest):
     def test_cs_service_name_font_consistency(self) -> None:
         """验证云服务名称字体样式一致"""
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         name_texts = ["项目管理", "设计生产协同", "智慧工地系统", "建筑劳务用工", "智慧运维平台"]
-        self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in name_texts:
@@ -54,7 +58,10 @@ class TestCloudServiceFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_cs_service_desc_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         desc_texts = [
             "经营数据可视化，动态监控项目经营",
             "业务在线化辅助实现管理制度标准化的有效落地",

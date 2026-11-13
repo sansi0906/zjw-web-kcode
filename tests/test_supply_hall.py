@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.supply_hall_page import SupplyHallPage
+from utils.browser_helpers import click_and_wait_for_new_page
+from utils.ui_quality import assert_console_clean, assert_no_placeholder_content, assert_images_alt
 
+pytestmark = [pytest.mark.regression]
 
 @allure.feature("供应大厅页面")
 class TestSupplyHall(BasePageTest):
@@ -15,6 +19,30 @@ class TestSupplyHall(BasePageTest):
     page_fixture_name = "supply_hall_page"
 
     # ==================== 通用测试（BasePageTest 自动继承） ====================
+
+    # ==================== 页面健康度（配置驱动，可扩展） ===================
+
+    @allure.story("页面健康度")
+    @allure.title("控制台无未知错误")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_console_errors(self, test_data) -> None:
+        self.page_obj.open()
+        assert_console_clean(self.page_obj.page, test_data, page_key="supply_hall")
+
+    @allure.story("页面健康度")
+    @allure.title("无未知测试占位符内容")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_placeholder_content(self, test_data) -> None:
+        self.page_obj.open()
+        assert_no_placeholder_content(self.page_obj.page, test_data, page_key="supply_hall")
+
+    @allure.story("页面健康度")
+    @allure.title("图片alt文本检查")
+    @allure.severity(allure.severity_level.MINOR)
+    def test_images_alt_text(self, test_data) -> None:
+        self.page_obj.open()
+        assert_images_alt(self.page_obj.page, test_data, page_key="supply_hall", key="images_alt")
+
 
     # ==================== 页面内容展示 ===================
 
@@ -75,6 +103,46 @@ class TestSupplyHall(BasePageTest):
         self.page_obj.open()
         self.page_obj.click_first_supply_item()
         self.page_obj.take_screenshot("supply_item_detail", "info")
+
+    @allure.story("商品交互")
+    @allure.title("商品详情与列表一致性")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_supply_item_detail_consistency(self) -> None:
+        """列表首项点击后，详情页应包含该商品标题且展示价格/商家字段"""
+        self.page_obj.open()
+        cards = self.page_obj.page.locator("article")
+        if cards.count() == 0:
+            pytest.skip("未找到供应商品卡片")
+        card = cards.first
+        card_text = (card.text_content() or "").strip().replace("\n", " ")
+        title = card_text[:20]
+        assert title, "供应商品卡片标题为空"
+
+        old_url = self.page_obj.page.url
+        result_page = self.page_obj.page
+        try:
+            result_page = click_and_wait_for_new_page(self.page_obj.page, card, timeout=8000)
+        except Exception:
+            # 无新标签页时 click_and_wait_for_new_page 会抛超时，但点击已生效（同页/弹层跳转）
+            try:
+                self.page_obj.page.wait_for_load_state("domcontentloaded", timeout=8000)
+            except Exception:
+                pass
+
+        try:
+            assert "detail" in result_page.url, f"点击商品后未进入详情页: {result_page.url}"
+            body = (result_page.locator("body").inner_text(timeout=8000) or "").replace("\n", " ")
+            key = title[:8]
+            assert key in body, f"详情页未包含列表商品标题片段 {key!r}: {body[:120]}"
+            assert any(k in body for k in ("产品编号", "产品品牌", "规格型号", "起订量", "价格", "元")), (
+                "详情页缺少商品关键字段（编号/品牌/规格/起订量/价格）"
+            )
+            self.page_obj.take_screenshot("supply_detail_consistency", "info")
+        finally:
+            if result_page is not self.page_obj.page:
+                result_page.close()
+            if self.page_obj.page.url != old_url and "supplyHall" not in self.page_obj.page.url:
+                self.page_obj.open()
 
     # ==================== 悬浮功能区 ===================
 

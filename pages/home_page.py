@@ -37,8 +37,8 @@ class HomePage(BasePage):
     }
 
     # ==================== 搜索栏 ====================
-    SEARCH_INPUT = "input[placeholder='请输入您要找的类目、商品或、材料']"
-    SEARCH_BTN = "button:has-text('搜索')"
+    SEARCH_INPUT = "input[placeholder='请输入您要找的类目、商品或、材料'], input[placeholder*='请输入您要搜索'], input[placeholder*='搜索'], input[type='search']"
+    SEARCH_BTN = "button:has-text('搜索'), [class*='search'] button, .search-btn"
 
     # ==================== 热门搜索 ====================
     HOT_SEARCH_LABEL = "text=热门搜索："
@@ -129,40 +129,127 @@ class HomePage(BasePage):
         """点击注册按钮"""
         self.click(self.REGISTER_BTN)
 
+    def _visible_locator(self, selector: str):
+        """返回可见元素优先的定位器（兼容 Web/H5 隐藏重复节点）"""
+        return self.visible_locator(selector)
+
     def fill_search_input(self, text: str) -> None:
-        """填充搜索框"""
-        search = self.page.locator(self.SEARCH_INPUT).first
-        if search.is_visible():
-            search.fill(text)
+        """填充搜索框（自动选择可见输入框，兼容 Web/H5）"""
+        search = self._visible_locator(self.SEARCH_INPUT)
+        if search.is_visible(timeout=1500):
+            try:
+                search.fill(text)
+            except Exception:
+                search.evaluate("(e,v)=>{e.value=v; e.dispatchEvent(new Event('input',{bubbles:true}));}", text)
 
     def click_search_btn(self) -> None:
-        """点击搜索按钮"""
-        btn = self.page.locator(self.SEARCH_BTN).first
-        if btn.is_visible():
+        """点击搜索按钮（兼容 Web/H5；无按钮时回车提交）"""
+        btn = self._visible_locator(self.SEARCH_BTN)
+        if btn.is_visible(timeout=1500):
             btn.click()
-            self.wait_for_load()
+        else:
+            search = self._visible_locator(self.SEARCH_INPUT)
+            if search.is_visible(timeout=1000):
+                search.press("Enter")
+        self.wait_for_load()
 
     def do_search(self, keyword: str) -> None:
         """输入关键词并执行搜索"""
+        # 结果页输入框/行为可能不同，先确保在首页再执行，避免 serial 共享页状态污染
+        try:
+            if "searchResult" not in self.page.url and self._visible_locator(self.SEARCH_INPUT).is_visible(timeout=800) is False:
+                self.goto()
+                self.wait_for_load()
+        except Exception:
+            try:
+                self.goto()
+                self.wait_for_load()
+            except Exception:
+                pass
         self.fill_search_input(keyword)
-        self.page.wait_for_timeout(500)
+        try:
+            self._visible_locator(self.SEARCH_INPUT).wait_for(state="visible", timeout=1500)
+        except Exception:
+            pass
+        prev_url = self.page.url
         self.click_search_btn()
-        self.page.wait_for_timeout(2000)
+        try:
+            self.page.wait_for_url(lambda u: "searchResult" in u or u != prev_url, timeout=8000)
+        except Exception:
+            pass
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
 
-    def get_search_result_titles(self) -> list[str]:
+    def get_search_result_titles(self, timeout_ms: int = 8000) -> list[str]:
         """获取搜索结果页的商品标题"""
+        try:
+            self.page.locator("article").first.wait_for(state="attached", timeout=min(timeout_ms, 5000))
+        except Exception:
+            pass
         cards = self.page.locator("article")
         titles = []
         for i in range(cards.count()):
-            text = (cards.nth(i).text_content() or "").strip()
+            try:
+                text = (cards.nth(i).text_content(timeout=2000) or "").strip()
+            except Exception:
+                continue
             if text:
                 titles.append(text.replace("\n", " ")[:60])
         return titles
 
-    def has_search_empty_hint(self) -> bool:
-        """搜索结果页是否展示"没有找到相关数据"提示"""
-        body = self.page.locator("body").inner_text()
-        return "没有找到相关数据" in body
+    def has_search_empty_hint(self, timeout_ms: int = 8000) -> bool:
+        """搜索结果页是否展示空状态提示（兼容常见文案变体）。"""
+        hints = [
+            "没有找到相关数据",
+            "暂无相关数据",
+            "暂无数据",
+            "未找到相关",
+            "没有找到",
+            "搜索结果为空",
+        ]
+        # 先等待页面出现结果或空状态的常见信号，避免异步渲染竞态
+        try:
+            self.page.wait_for_function(
+                """(hs) => {
+                    const t = (document.body && document.body.innerText) || '';
+                    if (hs.some(h => t.includes(h))) return true;
+                    if (document.querySelector('article')) return true;
+                    if (t.includes('共') && t.includes('条')) return true;
+                    return false;
+                }""",
+                arg=hints,
+                timeout=min(timeout_ms, 5000),
+            )
+        except Exception:
+            pass
+        try:
+            body = self.page.locator("body").inner_text(timeout=3000) or ""
+        except Exception:
+            body = ""
+        if any(h in body for h in hints):
+            return True
+        # 兜底：常见空状态容器
+        for sel in [
+            ".ant-empty-description",
+            ".ant-empty",
+            ".n-empty",
+            ".el-empty__description",
+            "[class*='empty']",
+        ]:
+            try:
+                loc = self.page.locator(sel)
+                if self.first_visible(selector, timeout=500) is not None:
+                    t = (loc.first.inner_text(timeout=1000) or "").strip()
+                    if t and any(x in t for x in ["没有", "暂无", "未找到", "空"]):
+                        return True
+            except Exception:
+                continue
+        return False
 
     def get_search_keyword(self) -> str:
         """从搜索结果页 URL 中解析关键词"""
@@ -213,7 +300,17 @@ class HomePage(BasePage):
         dots = self.page.locator(self.CAROUSEL_DOT)
         if dots.count() > index:
             dots.nth(index).click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_function(
+                    "(i) => { const d = document.querySelectorAll('.n-carousel__dot'); return d[i] && (d[i].classList.contains('n-carousel__dot--active') || d[i].getAttribute('aria-current')==='true'); }",
+                    arg=index,
+                    timeout=3000,
+                )
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def get_carousel_images_count(self) -> int:
         """获取轮播图图片数量"""
@@ -288,10 +385,22 @@ class HomePage(BasePage):
             btn = self.page.locator(f"button:has-text('{tab_text}')").first
             if btn.is_visible():
                 btn.click()
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=3000)
+                except Exception:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                    except Exception:
+                        pass
             return
         self.click(f"text={tab_text}")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=3000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+            except Exception:
+                pass
 
     def get_merchant_images_count(self) -> int:
         """获取企业图片数量"""
@@ -369,6 +478,25 @@ class HomePage(BasePage):
             self.wait_for_load()
             self.wait_for_url_change(old_url)
 
+    def click_view_all_exhibition(self) -> None:
+        """点击会展活动'查看全部'（按 href 精确定位）"""
+        btns = self.page.locator("a:has-text('查看全部')")
+        for i in range(btns.count()):
+            btn = btns.nth(i)
+            href = btn.get_attribute("href") or ""
+            if "exhibitionActivity" in href:
+                old_url = self.page.url
+                btn.click()
+                self.wait_for_load()
+                self.wait_for_url_change(old_url)
+                return
+        fallback = self.page.locator(self.SECTION_EXHIBITION).locator("xpath=following::a[normalize-space()='查看全部'][1]").first
+        if fallback.is_visible(timeout=2000):
+            old_url = self.page.url
+            fallback.click()
+            self.wait_for_load()
+            self.wait_for_url_change(old_url)
+
     # ==================== 产业政策 ====================
 
     def scroll_to_policy(self) -> None:
@@ -380,9 +508,15 @@ class HomePage(BasePage):
         return self.page.locator("button:has-text('行业动态'), button:has-text('政策资讯'), button:has-text('政策解读')").count()
 
     def click_policy_tab(self, tab_text: str) -> None:
-        """点击政策标签页"""
+        """点击产业政策 Tab"""
         self.click(f"text={tab_text}")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=3000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+            except Exception:
+                pass
 
     def get_news_item_count(self) -> int:
         """获取新闻条目数量"""
@@ -421,7 +555,10 @@ class HomePage(BasePage):
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     def click_footer_phone(self) -> None:
         """点击页脚服务电话"""
@@ -439,15 +576,27 @@ class HomePage(BasePage):
         """点击在线客服"""
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
-            self.safe_click(self.FLOAT_CUSTOMER_SERVICE)
-            self.page.wait_for_timeout(1500)
+            btn.click()
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
-            self.safe_click(self.FLOAT_INTENT_FORM)
-            self.page.wait_for_timeout(1500)
+            btn.click()
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 断言辅助 ====================
 

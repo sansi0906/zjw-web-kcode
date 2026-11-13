@@ -15,9 +15,10 @@ import pytest
 from pages.achievement_transformation_page import AchievementTransformationPage
 from pages.demand_page import DemandPage
 from pages.industry_news_page import IndustryNewsPage
-from pages.industry_policy_page import IndustryPolicyPage
 from pages.key_project_page import KeyProjectsPage
 from pages.supply_hall_page import SupplyHallPage
+
+pytestmark = [pytest.mark.interaction, pytest.mark.regression, pytest.mark.serial]
 
 
 # ==================== 筛选切换强断言 ====================
@@ -25,7 +26,6 @@ from pages.supply_hall_page import SupplyHallPage
 # (用例名, 页面类, 筛选项 A, 筛选项 B, 页面中文名)
 FILTER_SWITCH_CASES = [
     ("重点项目", KeyProjectsPage, "房建项目", "市政项目"),
-    ("产业政策", IndustryPolicyPage, "政策资讯", "政策解读"),
     ("产业新闻", IndustryNewsPage, "行业动态", "政策资讯"),
     ("产业需求", DemandPage, "建筑建材", "机械设备"),
     ("成果转化", AchievementTransformationPage, "课题", "成果"),
@@ -56,12 +56,24 @@ class TestFilterSwitch:
         allure.dynamic.title(f"{page_name} - 筛选 {label_a} / {label_b} 列表必须不同")
         page_obj = page_cls(page)
         page_obj.open()
-        page.wait_for_timeout(1500)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
 
         titles_a = page_obj.apply_filter(label_a)
-        page.wait_for_timeout(800)
+        try:
+            page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         titles_b = page_obj.apply_filter(label_b)
-        page.wait_for_timeout(800)
+        try:
+            page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
 
         assert titles_a, f"筛选 '{label_a}' 后列表为空"
         assert titles_b, f"筛选 '{label_b}' 后列表为空"
@@ -84,17 +96,29 @@ class TestFilterSwitch:
         allure.dynamic.title(f"{page_name} - 选中项高亮可识别")
         page_obj = page_cls(page)
         page_obj.open()
-        page.wait_for_timeout(1500)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
 
         page_obj.apply_filter(label_a)
-        page.wait_for_timeout(800)
+        try:
+            page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         active = page_obj.get_active_filter_label()
         assert active == label_a, (
             f"点击 '{label_a}' 后识别到的选中项为 {active!r}"
         )
 
         page_obj.apply_filter(label_b)
-        page.wait_for_timeout(800)
+        try:
+            page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         active = page_obj.get_active_filter_label()
         assert active == label_b, (
             f"点击 '{label_b}' 后识别到的选中项为 {active!r}"
@@ -106,7 +130,6 @@ class TestFilterSwitch:
 # (用例名, 页面类, 期望最小页数)
 PAGINATION_CASES = [
     ("重点项目", KeyProjectsPage, 2),
-    ("产业政策", IndustryPolicyPage, 2),
     ("产业新闻", IndustryNewsPage, 2),
 ]
 
@@ -130,7 +153,13 @@ class TestPagination:
         allure.dynamic.title(f"{page_name} - 翻页后列表内容必须变化")
         page_obj = page_cls(page)
         page_obj.open()
-        page.wait_for_timeout(2000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
 
         pages = page_obj.get_pagination_pages()
         if len([p for p in pages if p.isdigit()]) < min_pages:
@@ -140,7 +169,14 @@ class TestPagination:
         assert titles_p1, "第 1 页列表为空"
 
         assert page_obj.click_pagination_page("2"), "点击第 2 页失败"
-        page.wait_for_timeout(1500)
+        if hasattr(page_obj, "wait_for_active_page"):
+            page_obj.wait_for_active_page("2", timeout=5000)
+        if hasattr(page_obj, "wait_for_list_titles_change"):
+            page_obj.wait_for_list_titles_change(titles_p1, timeout=6000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=3000)
+        except Exception:
+            pass
 
         active = page_obj.get_active_pagination_page()
         assert active == "2", f"翻页后激活页应为 2，实际 {active!r}"
@@ -164,23 +200,49 @@ class TestPagination:
         allure.dynamic.title(f"{page_name} - 返回第 1 页")
         page_obj = page_cls(page)
         page_obj.open()
-        page.wait_for_timeout(2000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
 
         pages = page_obj.get_pagination_pages()
         if len([p for p in pages if p.isdigit()]) < min_pages:
             pytest.skip(f"当前数据不足以翻页，实际页码: {pages}")
 
         titles_p1 = page_obj.get_list_titles()
+        assert titles_p1, "第 1 页列表为空"
+
         assert page_obj.click_pagination_page("2"), "点击第 2 页失败"
-        page.wait_for_timeout(1500)
+        if hasattr(page_obj, "wait_for_active_page"):
+            page_obj.wait_for_active_page("2", timeout=5000)
+        if hasattr(page_obj, "wait_for_list_titles_change"):
+            page_obj.wait_for_list_titles_change(titles_p1, timeout=6000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=3000)
+        except Exception:
+            pass
         titles_p2 = page_obj.get_list_titles()
+        assert titles_p2, "第 2 页列表为空"
         assert titles_p1 != titles_p2, "翻页后列表内容未变化（分页未生效）"
 
         assert page_obj.click_pagination_page("1"), "点击第 1 页失败"
-        page.wait_for_timeout(1500)
+        if hasattr(page_obj, "wait_for_active_page"):
+            page_obj.wait_for_active_page("1", timeout=5000)
+        if hasattr(page_obj, "wait_for_list_titles_change"):
+            page_obj.wait_for_list_titles_change(titles_p2, timeout=6000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=3000)
+        except Exception:
+            pass
         active = page_obj.get_active_pagination_page()
         assert active == "1", f"返回后激活页应为 1，实际 {active!r}"
-        titles_back = page_obj.get_list_titles()
+        if hasattr(page_obj, "wait_for_list_titles_stable"):
+            titles_back = page_obj.wait_for_list_titles_stable(expected=titles_p1, timeout=5000)
+        else:
+            titles_back = page_obj.get_list_titles()
         assert titles_back == titles_p1, "返回第 1 页后列表内容与初始不一致"
 
     @pytest.mark.parametrize(
@@ -198,7 +260,13 @@ class TestPagination:
         allure.dynamic.title(f"{page_name} - 分页默认选中第 1 页")
         page_obj = page_cls(page)
         page_obj.open()
-        page.wait_for_timeout(2000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
 
         pages = page_obj.get_pagination_pages()
         assert pages, "未找到分页页码"

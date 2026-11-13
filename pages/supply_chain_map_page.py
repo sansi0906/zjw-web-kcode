@@ -32,16 +32,28 @@ class SupplyChainMapPage(BasePage):
     def open(self) -> "SupplyChainMapPage":
         """打开首页并滚动到供应链地图模块"""
         self.goto()
-        self.page.wait_for_timeout(2000)
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
         # 滚动到供应链地图区域
         self.page.evaluate("window.scrollTo(0, 800)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=2000)
+        except Exception:
+            pass
         return self
 
     def scroll_to_map(self) -> None:
         """滚动到供应链地图区域"""
         self.page.evaluate("window.scrollTo(0, 800)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=2000)
+        except Exception:
+            pass
 
     def get_category_tabs(self) -> list[str]:
         """获取所有分类标签文本"""
@@ -61,7 +73,13 @@ class SupplyChainMapPage(BasePage):
                 tab.click()
             except Exception:
                 tab.evaluate("el => el.click()")
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def get_region_count(self) -> int:
         """获取区域数量"""
@@ -158,6 +176,9 @@ class SupplyChainMapPage(BasePage):
                     el.click()
                 except Exception:
                     el.evaluate("el => el.click()")
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
                 return
 

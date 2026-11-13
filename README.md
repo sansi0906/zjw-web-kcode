@@ -15,12 +15,10 @@ zjw-web-kcode/
 │   ├── home_page.py             # 首页
 │   ├── supply_hall_page.py      # 供应大厅
 │   ├── supply_chain_map_page.py # 供应链地图
-│   ├── industry_demand_page.py  # 产业需求
 │   ├── industry_news_page.py    # 产业资讯/政策
 │   ├── key_project_page.py      # 重点项目
 │   ├── all_products_page.py     # 全部商品
 │   ├── intelligent_construction_page.py  # 智能建造
-│   ├── industry_policy_page.py  # 产业政策
 │   ├── industry_association_page.py     # 产业协会
 │   ├── achievement_transformation_page.py # 成果转化
 │   ├── cloud_service_page.py    # 云服务
@@ -31,17 +29,25 @@ zjw-web-kcode/
 │   ├── base_page_test.py        # 页面通用测试基类
 │   ├── test_homepage_full.py    # 首页全量测试
 │   ├── test_supply_hall.py      # 供应大厅测试
-│   ├── test_industry_demand.py  # 产业需求测试
 │   ├── test_key_projects.py     # 重点项目测试
 │   ├── test_industry_news.py    # 产业资讯测试
 │   ├── test_all_products.py     # 全部商品测试
 │   ├── test_intelligent_construction.py  # 智能建造测试
-│   ├── test_industry_policy.py  # 产业政策测试
 │   ├── test_industry_association.py     # 产业协会测试
 │   ├── test_achievement_transformation.py # 成果转化测试
 │   ├── test_cloud_service.py    # 云服务测试
 │   ├── test_industrial_service.py       # 产业化服务测试
-│   └── test_supply_chain_map.py # 供应链地图测试
+    │   ├── test_exhibition.py     # 会展活动（列表→详情）
+    │   ├── test_demand_page.py    # 产业需求（筛选/搜索/详情/空态）
+    │   ├── test_supply_hall_search_result.py  # 搜索结果（Web/H5）
+    │   ├── test_register_validation.py  # 注册表单校验矩阵
+    │   ├── test_login_flow.py     # 登录弹窗/校验/失败提示
+    │   ├── test_error_pages.py    # 404/异常路由
+    │   ├── test_resilience.py     # 接口异常韧性
+    │   ├── test_a11y_basic.py     # 可访问性基础（a11y）
+    │   ├── test_visual_regression.py  # 视觉回归（--visual）
+    │   ├── test_homepage_h5_smoke.py  # H5 首页冒烟（菜单/登录/手势）
+    │   └── test_h5_pages_smoke.py     # H5 各列表页冒烟
 ├── utils/                       # 工具函数
 │   ├── __init__.py
 │   └── browser_helpers.py       # 浏览器辅助（跳转、安全点击、网络等待等）
@@ -235,7 +241,6 @@ allure generate reports/allure-results -o reports/html --clean
 1. test_homepage_full.py      # 单页快速模式，必须第一个
 2. test_key_projects.py
 3. test_industry_news.py
-4. test_industry_demand.py
 5. test_achievement_transformation.py
 6. test_cloud_service.py
 7. test_all_products.py

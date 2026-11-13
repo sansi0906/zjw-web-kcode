@@ -11,6 +11,8 @@ class DemandPage(BasePage):
     """产业需求页面"""
 
     PAGE_URL = "/demandPage"
+    # /demandPage 不在顶部主导航中，无需校验导航高亮
+    SKIP_NAV_ACTIVE_ASSERT = True
 
     # 分类标签（w-[140px] 的 tab 容器内，避免误匹配页脚同名链接）
     FILTER_TABS = {
@@ -52,7 +54,13 @@ class DemandPage(BasePage):
             el = self.page.locator(sel).first
             if el.is_visible():
                 el.click()
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=5000)
+                except Exception:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                    except Exception:
+                        pass
 
     def fill_search(self, text: str) -> None:
         el = self.page.locator(self.SEARCH_INPUT).first
@@ -63,13 +71,25 @@ class DemandPage(BasePage):
         btn = self.page.locator(self.SEARCH_BTN).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_reset(self) -> None:
         btn = self.page.locator(self.RESET_BTN).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def get_stats_texts(self) -> list:
         items = self.page.locator("[class*='stat'], [class*='count'], [class*='number']")
@@ -81,14 +101,40 @@ class DemandPage(BasePage):
         return texts
 
     def get_demand_titles(self) -> list[str]:
-        """获取需求条目标题"""
-        cards = self.page.locator("span.line-clamp-2")
-        titles = []
-        for i in range(cards.count()):
-            t = cards.nth(i).text_content()
-            if t and t.strip():
-                titles.append(t.strip()[:50])
-        return titles
+        """获取需求条目标题（容错：卡片可能异步渲染或选择器随版本变化）"""
+        selectors = [
+            "span.line-clamp-2",
+            "[class*='demand'] span.line-clamp-2",
+            "article h3, article h2, article .title",
+            "[class*='card'] h3, [class*='card'] .title",
+            "h3, h2",
+        ]
+        for sel in selectors:
+            try:
+                loc = self.page.locator(sel)
+                try:
+                    loc.first.wait_for(state="attached", timeout=4000)
+                except Exception:
+                    pass
+                count = loc.count()
+                if count == 0:
+                    continue
+                titles = []
+                for i in range(min(count, 30)):
+                    try:
+                        el = loc.nth(i)
+                        if not el.is_visible(timeout=300):
+                            continue
+                        t = (el.text_content(timeout=1500) or "").strip()
+                    except Exception:
+                        continue
+                    if t:
+                        titles.append(t.replace("\n", " ")[:50])
+                if titles:
+                    return titles
+            except Exception:
+                continue
+        return []
 
     def get_list_titles(self) -> list[str]:
         """获取列表条目标题（供筛选/分页断言使用）"""
@@ -117,4 +163,7 @@ class DemandPage(BasePage):
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass

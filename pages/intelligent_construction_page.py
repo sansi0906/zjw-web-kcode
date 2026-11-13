@@ -81,7 +81,13 @@ class IntelligentConstructionPage(BasePage):
         btn = self.page.locator(selector).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def assert_filter_works(self, filter_name: str) -> None:
         """断言筛选生效（智能建造页当前无分类 tab，调用即视为用例设计错误）"""
@@ -131,14 +137,26 @@ class IntelligentConstructionPage(BasePage):
         btn = self.page.locator(self.DECLARATION_NEW_TECH).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_seed_enterprise_declaration(self) -> None:
         """点击智能建造种子企业申报"""
         btn = self.page.locator(self.DECLARATION_SEED_ENTERPRISE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     # ==================== 标准规范操作 ====================
 
@@ -186,7 +204,17 @@ class IntelligentConstructionPage(BasePage):
         dots = self.page.locator(self.CAROUSEL_DOT)
         if dots.count() > index:
             dots.nth(index).click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_function(
+                    "(i) => { const d = document.querySelectorAll('.n-carousel__dot'); return d[i] && (d[i].classList.contains('n-carousel__dot--active') || d[i].getAttribute('aria-current')==='true'); }",
+                    arg=index,
+                    timeout=3000,
+                )
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 分页操作 ====================
 
@@ -219,21 +247,36 @@ class IntelligentConstructionPage(BasePage):
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 页脚操作 ====================
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     # ==================== 断言辅助 ====================
 

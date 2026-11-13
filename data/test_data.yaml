@@ -1,40 +1,418 @@
-# 测试数据配置
-# 支持多环境数据
-
+schema_version: 1
 environments:
   dev:
-    base_url: "http://dev.tj.gongrenle.com/"
+    base_url: http://dev.tj.gongrenle.com/
   staging:
-    base_url: "https://staging.tjjzcy.com/"
+    base_url: https://staging.tjjzcy.com/
   prod:
-    base_url: "https://www.tjjzcy.com/"
-
-# 测试用户
-# 供应链地图区域数据
+    base_url: https://www.tjjzcy.com/
+# 登录测试账号不入库：需要登录态时通过环境变量注入（TEST_LOGIN_ACCOUNT / TEST_LOGIN_PASSWORD）
 regions:
-  - name: "东丽区"
-    expected_keyword: "台上洗脸盆"
-  - name: "西青区"
-    expected_keyword: "门窗"
-
-# 产业需求筛选关键词
+- name: 东丽区
+  expected_keyword: 台上洗脸盆
+- name: 西青区
+  expected_keyword: 门窗
 demand_filters:
   建筑建材:
-    - "配电箱"
-    - "建材"
+  - 配电箱
+  - 建材
   机械设备:
-    - "施工电梯"
-    - "塔吊"
-    - "挖掘机"
+  - 施工电梯
+  - 塔吊
+  - 挖掘机
   劳务用工:
-    - "司机"
-    - "劳务"
+  - 司机
+  - 劳务
   技术服务:
-    - "招标"
-    - "技术"
-
-# 页面标题关键词验证
+  - 招标
+  - 技术
 page_titles:
-  home: "天津市建筑产业互联网平台"
-  supply_hall: "建材"
-  demand: "需求"
+  home: 天津市建筑产业互联网平台
+  supply_hall: 建材
+  demand: 需求
+navigation:
+  home_page:
+    nav_links:
+    - text: 首页
+      url_fragment: /
+    - text: 供应大厅
+      url_fragment: supplyHall
+    - text: 智能建造
+      url_fragment: intelligentConstruction
+    - text: 重点项目
+      url_fragment: keyProject
+    - text: 产业政策
+      url_fragment: industryNews
+    - text: 产业协会
+      url_fragment: industryAssociation
+    - text: 成果转化
+      url_fragment: achievementTransformation
+    - text: 云服务
+      url_fragment: cloudService
+filter_tabs:
+  key_projects:
+  - 房建项目
+  - 市政项目
+  - 其他项目
+filter_switch_pairs: []
+pagination_pages: []
+search_keywords:
+  home_page:
+    normal: 钢筋
+    empty: zzz不存在的关键词zzz
+  supply_hall: 钢筋
+  demand_page: 钢筋
+  industry_association: 混凝土
+  common_empty: zzzxxyyynonexist9999
+carousel:
+  web:
+    min_dots: 2
+    auto_rotate_timeout_ms: 8000
+    rotate_humanized_note: 站点实测约 5s 自动轮换，阈值 8s 为容忍上限
+login:
+  invalid_account: "13800138000"
+  invalid_code: "000000"
+page_assertions:
+  industry_news:
+    loaded_text: 产业新闻
+  achievement_transformation:
+    loaded_text: 成果转化
+  key_projects:
+    loaded_text: 重点项目
+  supply_hall:
+    loaded_text: 供应大厅
+font_tests:
+  homepage_full:
+    section_title:
+      texts:
+      - 产业服务
+      - 津筑云商
+      - 会展活动
+      - 产业需求
+      - 产业政策
+      selector: h2:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      scroll_into_view: true
+    service_card_title:
+      texts:
+      - 供应大厅
+      - 劳务对接
+      - AI+工具集
+      - 金融服务
+      - 建筑机器人
+      - 智慧工地
+      selector: h3:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      scroll_into_view: true
+    tab_button:
+      texts:
+      - 行业动态
+      - 政策资讯
+      - 政策解读
+      selector: button:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      min_visible: 2
+      scroll_into_view: true
+    body_desc:
+      texts:
+      - 全方位服务产业链
+      - 平台优质企业，精准商务对接
+      - 聚焦建筑行业各类活动
+      selector: p:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      scroll_into_view: true
+      optional: true
+    footer_nav:
+      texts:
+      - 供应大厅
+      - 产业政策
+      - 智能建造
+      - 重点项目
+      selector: footer >> text={text}
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      scroll_into_view: true
+    hot_search:
+      texts:
+      - 热搜词名称一
+      - 热搜词名称二
+      - 热搜词名称三
+      - 热搜词名称四
+      - 热搜词名称五
+      - 热搜词名称六
+      selector: text={text}
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    news_title:
+      texts:
+      - 云南石材建材产业发展峰会
+      - 绿色建筑新浪潮来袭！2027广州住博会！
+      selector: text={text}
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    supply_item:
+      texts:
+      - 施工电梯
+      - 配电箱
+      - 灯具、开关面板
+      - PVC管材、管件
+      - 门窗工程
+      selector: text={text}
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    footer_service:
+      texts:
+      - 建材出售
+      - 建材出租
+      - 设备出售
+      - 设备出租
+      - 劳务用工
+      - 产业需求
+      selector: footer >> text={text}
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      scroll_into_view: true
+      optional: true
+    jzys_tab:
+      texts:
+      - 产业生态全景图
+      - 建筑服务业
+      - 建筑制造业
+      - 建筑建造业
+      selector: button:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      min_visible: 2
+      scroll_into_view: true
+      optional: true
+    nav_link:
+      texts:
+      - 供应大厅
+      - 智能建造
+      - 重点项目
+      - 产业政策
+      selector: a:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+    exhibition_info:
+      texts:
+      - 2026-10-06—2026-10-27
+      - 昆明世纪城国际会议中心
+      - 2026-10-01—2026-11-10
+      selector: span:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    demand_contact:
+      texts:
+      - 董经理
+      - 刘经理
+      selector: strong:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    demand_count:
+      texts:
+      - '150'
+      - '195'
+      - '170'
+      selector: span:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    news_date:
+      texts:
+      - '2026-10-10'
+      - '2026-10-08'
+      selector: time:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    news_desc:
+      texts:
+      - 微风范围分为访问范围
+      - 范围分为访问范围
+      - 时代大厦是的是的是多少打撒
+      selector: p:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+    float_button:
+      texts:
+      - 在线客服
+      - 意向填报
+      selector: div:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+ui_quality:
+  default:
+    console:
+      enabled: true
+      listen_types:
+      - error
+      - warning
+      reload: true
+      wait_until: networkidle
+      timeout_ms: 20000
+      known_error_patterns:
+      - Cannot destructure property 'timestamp'
+      fail_on_unknown: true
+      known_xfail_reason: 已知缺陷：微前端配置接口异常导致 timestamp 解构报错
+      ignore_known_on_envs:
+      - test
+    images_alt:
+      enabled: true
+      selector: img
+      visible_only: false
+      sample_limit: 20
+      max_missing: 5
+      xfail_if_exceeded: true
+      xfail_reason: 已知缺陷：图片缺少 alt 文本
+      # 测试环境按现状接受已知缺失(附清单不xfail)；生产环境仍按策略校验
+      accept_exceeded_on_envs: [test]
+    merchant_images_alt:
+      enabled: true
+      selector: img[src*='/20260923/']
+      visible_only: true
+      sample_limit: 5
+      max_missing: 0
+      xfail_if_exceeded: true
+      xfail_reason: 已知缺陷：商户图片缺少 alt 文本
+      accept_exceeded_on_envs: [test]
+    placeholder:
+      enabled: true
+      known_keywords:
+      - 哇哦
+      - 测试新增
+      - 时代大厦是的是的是多少打撒
+      - 测试
+      scan_keywords:
+      - 哇哦
+      - 测试新增
+      - 时代大厦是的是的是多少打撒
+      - 测试
+      fail_on_unknown: true
+      xfail_on_known: true
+      known_xfail_reason: 已知缺陷：残留占位/测试文案（测试/时代大厦...）
+      # 测试环境允许测试数据/占位内容，不做占位符内容校验；生产环境(prod)强制校验
+      enforce_on_envs: [prod]
+  homepage:
+    images_alt:
+      max_missing: 5
+  supply_hall:
+    console: {}
+    placeholder: {}
+    images_alt:
+      max_missing: 5
+      xfail_if_exceeded: true
+  key_project:
+    console: {}
+    placeholder: {}
+    images_alt:
+      max_missing: 5
+      xfail_if_exceeded: true
+  industry_news:
+    console: {}
+    placeholder: {}
+    images_alt:
+      max_missing: 5
+      xfail_if_exceeded: true
+  intelligent_construction:
+    console: {}
+    placeholder: {}
+  industry_association:
+    console: {}
+    placeholder: {}
+  achievement_transformation:
+    console: {}
+    placeholder: {}
+  cloud_service:
+    console: {}
+    placeholder: {}
+  industrial_service:
+    console: {}
+    placeholder: {}
+  demand_page:
+    console: {}
+    placeholder: {}
+  supply_hall_search_result:
+    console: {}
+    placeholder: {}
+    images_alt:
+      max_missing: 10
+      xfail_if_exceeded: true
+  homepage_h5:
+    console: {}
+    placeholder: {}

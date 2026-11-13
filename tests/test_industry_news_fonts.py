@@ -1,13 +1,16 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.industry_news_page import IndustryNewsPage
 
+pytestmark = [pytest.mark.fonts, pytest.mark.regression]
 
-@allure.feature("产业新闻字体一致性")
+
+
 class TestIndustryNewsFonts(BasePageTest):
     page_name = "产业新闻"
     page_fixture_name = "industry_news_page"
@@ -17,7 +20,10 @@ class TestIndustryNewsFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_news_title_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         title_texts = ["饿飞飞飞我分为", "测试新增", "开幕！2025第五届国际工程建设供应链博览会！"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
@@ -46,7 +52,10 @@ class TestIndustryNewsFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_news_desc_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         desc_texts = ["微风范围分为访问范围", "范围分为访问范围", "时代大厦是的是的是多少打撒"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
@@ -75,7 +84,10 @@ class TestIndustryNewsFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_news_time_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         time_texts = ["2026-10-10", "2026-10-08", "2025-09-23"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}

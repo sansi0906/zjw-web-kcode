@@ -1,23 +1,30 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.demand_page import DemandPage
 
 
+pytestmark = [pytest.mark.regression]
+
 @allure.feature("产业需求字体一致性")
 class TestDemandPageFonts(BasePageTest):
     page_name = "产业需求"
     page_fixture_name = "demand_page"
+    NAV_ACTIVE_STATE_APPLICABLE = False
 
     @allure.story("字体一致性")
     @allure.title("产业需求描述字体一致性")
     @allure.severity(allure.severity_level.MINOR)
     def test_demand_desc_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         desc_texts = ["住宅配套系列，含专票卸车。", "毛坯房配套全系列、含专票13%含运费卸车。", "住宅配套全系列、含专票13%，含运费卸车。"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
@@ -46,7 +53,10 @@ class TestDemandPageFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_demand_amount_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         amount_texts = ["150万元", "19万元", "15万元", "22万元"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
@@ -75,7 +85,10 @@ class TestDemandPageFonts(BasePageTest):
     @allure.severity(allure.severity_level.MINOR)
     def test_demand_big_amount_font_consistency(self) -> None:
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         amount_texts = ["150万", "19万", "15万", "22万"]
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}

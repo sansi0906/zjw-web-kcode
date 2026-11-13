@@ -170,7 +170,6 @@ class TestXxx(BasePageTest):
 | 事实 | 说明 |
 |------|------|
 | 顶部导航容器类名是 `.nav-cneter` | 源码拼写错误（应为 center），选择器必须按此写 |
-| 导航"产业政策"指向 `/industryNews` | `/industryPolicy` 只能直接 URL 访问 |
 | 商品条目用 `<article>` 渲染 | 供应大厅商品卡片选择器需包含 `article` |
 | 供应大厅分类按钮描述含"智能建造" | 点击"智能建造"会误点分类按钮，必须限定导航区选择器 |
 | 首页"查看全部"共 3 个 | href 分别为 `/exhibitionActivity`、`/demandPage`、`/industryNews`，需按 href 精确定位 |
@@ -243,8 +242,6 @@ class TestXxx(BasePageTest):
 | `test_all_products.py` | 12 | 「全部商品」模块改版下线，文件保留作历史参考 |
 | `test_supply_chain_map.py` | 13 | 「产业链地图」页面已下线 |
 | `test_supply_hall_page.py` | 2 | 旧版供应大厅的统计卡片 / 分页组件已改版 |
-| `test_industry_demand.py` 通用用例 | 6 | `/industryDemand` 为旧版页面，无页脚 / 悬浮按钮 / 顶部导航 |
-| 导航高亮 | 5 | `/demandPage`、`/industryPolicy` 不在顶部导航中 |
 | 移动端手势（首页） | 3 | 仅 H5 端可执行 |
 | 供应大厅价格 | 1 | 供应条目未渲染价格元素，属数据现状 |
 | 客服 / 意向填报按钮 | 4 | 部分页面未渲染对应悬浮按钮 |

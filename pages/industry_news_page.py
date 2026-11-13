@@ -52,26 +52,57 @@ class IndustryNewsPage(BasePage):
         return self.page.locator(self.NEWS_CARDS).count()
 
     def get_news_titles(self) -> list[str]:
-        """获取新闻标题
+        """获取新闻标题（容错：结构/渲染时序可能变化）
 
-        产业新闻列表使用 <article> 渲染，每条包含标题 + 简介 + 日期。
+        产业新闻列表通常使用 <article> 渲染，每条包含标题 + 简介 + 日期。
         """
-        cards = self.page.locator("article")
+        try:
+            self.page.locator("article, [class*='news'] h2, [class*='news'] h3, h2, h3").first.wait_for(
+                state="attached", timeout=4000
+            )
+        except Exception:
+            pass
+
         titles = []
-        for i in range(cards.count()):
-            el = cards.nth(i)
-            if not el.is_visible():
-                continue
-            text = (el.text_content() or "").strip()
-            if text:
-                titles.append(text.replace("\n", " ")[:60])
+        try:
+            cards = self.page.locator("article")
+            count = cards.count()
+            for i in range(min(count, 30)):
+                try:
+                    el = cards.nth(i)
+                    if not el.is_visible(timeout=300):
+                        continue
+                    text = (el.text_content(timeout=1500) or "").strip()
+                except Exception:
+                    continue
+                if text:
+                    titles.append(text.replace("\n", " ")[:60])
+        except Exception:
+            pass
         if titles:
             return titles
-        fallback = self.page.locator("h2, h3")
-        for i in range(fallback.count()):
-            text = (fallback.nth(i).text_content() or "").strip()
-            if text:
-                titles.append(text.replace("\n", " ")[:60])
+
+        for sel in ["h2", "h3", ".title", "[class*='title']"]:
+            try:
+                loc = self.page.locator(sel)
+                count = loc.count()
+                if count == 0:
+                    continue
+                out = []
+                for i in range(min(count, 30)):
+                    try:
+                        el = loc.nth(i)
+                        if not el.is_visible(timeout=300):
+                            continue
+                        text = (el.text_content(timeout=1500) or "").strip()
+                    except Exception:
+                        continue
+                    if text:
+                        out.append(text.replace("\n", " ")[:60])
+                if out:
+                    return out
+            except Exception:
+                continue
         return titles
 
     def get_list_titles(self) -> list[str]:
@@ -84,7 +115,13 @@ class IndustryNewsPage(BasePage):
         el = self.page.locator(selector).first
         if el.is_visible(timeout=3000):
             el.click()
-            self.page.wait_for_timeout(1200)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def assert_filter_works(self, filter_name: str) -> None:
         """断言筛选生效（列表非空，且切换后内容变化）"""
@@ -117,7 +154,10 @@ class IndustryNewsPage(BasePage):
             pass
         for _ in range(6):
             self.page.evaluate("window.scrollBy(0, 400)")
-            self.page.wait_for_timeout(500)
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+            except Exception:
+                pass
             try:
                 self.assert_text_visible("产业新闻", partial=True)
                 return
@@ -126,20 +166,6 @@ class IndustryNewsPage(BasePage):
         # 最后兜底：检查新闻卡片是否存在
         count = self.get_news_count()
         assert count > 0, "未找到产业新闻区域或新闻卡片"
-
-    def click_tab(self, tab_name: str) -> None:
-        """点击Tab切换"""
-        tab_map = {
-            "行业动态": self.TAB_行业动态,
-            "政策资讯": self.TAB_政策资讯,
-            "政策解读": self.TAB_政策解读,
-        }
-        sel = tab_map.get(tab_name)
-        if sel:
-            el = self.page.locator(sel).first
-            if el.is_visible():
-                el.click()
-                self.page.wait_for_timeout(1000)
 
     # ==================== 分页操作 ====================
 

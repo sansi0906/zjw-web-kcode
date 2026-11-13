@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 智能建造页面字体一致性测试
 """
 from __future__ import annotations
 
 import allure
+import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.intelligent_construction_page import IntelligentConstructionPage
 
+
+pytestmark = [pytest.mark.regression]
 
 @allure.feature("智能建造字体一致性")
 class TestIntelligentConstructionFonts(BasePageTest):
@@ -23,10 +26,11 @@ class TestIntelligentConstructionFonts(BasePageTest):
     def test_ic_demo_project_title_font_consistency(self) -> None:
         """验证智能建造示范项目标题字体样式一致"""
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         title_texts = ["智能建造示范项目", "智能建造新技术新产品", "智能建造标准"]
-        self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in title_texts:
@@ -56,7 +60,10 @@ class TestIntelligentConstructionFonts(BasePageTest):
         """验证智能建造项目卡片标题字体样式一致"""
         card_texts = ["柳林城更地块智汇中心大厦", "海油发展天津海洋装备智能制造基地", "天津市第三中心医院（东丽院区）"]
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in card_texts:
@@ -86,7 +93,10 @@ class TestIntelligentConstructionFonts(BasePageTest):
         """验证智能建造标准名称字体样式一致"""
         std_texts = ["住建部智能建造技术导则", "住建部智能建造技术导则（试行）", "天津市智慧工地建设技术标准", "京津冀智能建造技术规程"]
         self.page_obj.open()
-        self.page_obj.page.wait_for_timeout(2000)
+        try:
+            self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            pass
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in std_texts:

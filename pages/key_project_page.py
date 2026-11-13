@@ -91,7 +91,13 @@ class KeyProjectsPage(BasePage):
             filter_btn = self.page.locator(selector).first
             if filter_btn.is_visible():
                 filter_btn.click()
-                self.page.wait_for_timeout(1000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=5000)
+                except Exception:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                    except Exception:
+                        pass
 
     def get_active_filter(self) -> str:
         """获取当前选中的筛选分类"""
@@ -114,14 +120,23 @@ class KeyProjectsPage(BasePage):
         return self.page.locator(self.PROJECT_CARD).count()
 
     def get_project_titles(self) -> list[str]:
-        """获取所有项目标题"""
-        if self.is_mobile():
-            cards = self.page.locator(self.PROJECT_CARD_MOBILE)
-        else:
-            cards = self.page.locator(self.PROJECT_CARD)
+        """获取所有项目标题（带等待与容错，适配异步刷新）"""
+        cards_sel = self.PROJECT_CARD_MOBILE if self.is_mobile() else self.PROJECT_CARD
+        cards = self.page.locator(cards_sel)
+        try:
+            cards.first.wait_for(state="attached", timeout=5000)
+        except Exception:
+            pass
         titles = []
-        for i in range(cards.count()):
-            title = cards.nth(i).text_content()
+        count = min(cards.count(), 30)
+        for i in range(count):
+            try:
+                el = cards.nth(i)
+                if not el.is_visible(timeout=300):
+                    continue
+                title = el.text_content(timeout=2000)
+            except Exception:
+                continue
             if title and title.strip():
                 titles.append(title.strip()[:50])
         return titles
@@ -154,14 +169,26 @@ class KeyProjectsPage(BasePage):
         btn = self.page.locator(self.BTN_发布项目).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_publish_demand(self) -> None:
         """点击发布需求按钮"""
         btn = self.page.locator(self.BTN_发布需求).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1000)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+                except Exception:
+                    pass
 
     def click_view_all(self) -> None:
         """点击查看全部按钮"""
@@ -194,21 +221,36 @@ class KeyProjectsPage(BasePage):
         btn = self.page.locator(self.FLOAT_CUSTOMER_SERVICE).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报"""
         btn = self.page.locator(self.FLOAT_INTENT_FORM).first
         if btn.is_visible():
             btn.click()
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     # ==================== 页脚操作 ====================
 
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     # ==================== 断言辅助 ====================
 

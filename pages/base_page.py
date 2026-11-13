@@ -33,29 +33,43 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
         screenshot_dir = os.environ.get("SCREENSHOT_DIR", settings.screenshots_dir)
         self.screenshots_dir = Path(screenshot_dir)
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
-        # 尝试从 pytest request 获取平台信息
-        try:
-            import pytest
-            # request 挂在 page.context? 不直接，conftest 存在 config._platform_info
-            cfg = pytest.current_config if hasattr(pytest, 'current_config') else None
-        except Exception:
-            cfg = None
         self._platform_info = None
+        self._platform = settings.platform
+        self._is_mobile = self._detect_mobile(page)
+
+    @staticmethod
+    def _detect_mobile(page: Page) -> bool:
+        """优先按实际页面/上下文能力判断移动端，避免并行或夹具场景下 settings 串台"""
         try:
-            # conftest 设置 request.config._platform_info
-            from tests import conftest  # type: ignore
+            vp = page.viewport_size or {}
+            width = int(vp.get("width") or 0)
+            if width and width <= 900:
+                return True
         except Exception:
             pass
-        # 直接从当前进程的 config? 简单处理：从 settings 和 page 判断
-        self._platform = settings.platform
-        self._is_mobile = settings.is_mobile
+        try:
+            ua = ""
+            ctx = getattr(page, "context", None)
+            browser = getattr(ctx, "browser", None) if ctx else None
+            ua = getattr(browser, "user_agent", "") or ""
+            if not ua and ctx and hasattr(ctx, "_impl_obj"):
+                ua = getattr(getattr(ctx, "_impl_obj", None), "_options", {}).get("userAgent", "") or ""
+            # 设备上下文常见 UA 关键词兜底
+            ua_l = ua.lower()
+            if any(k in ua_l for k in ("mobile", "iphone", "android", "ipad")):
+                return True
+        except Exception:
+            pass
+        return bool(settings.is_mobile)
 
     def is_mobile(self) -> bool:
         """判断是否为移动端/H5 平台"""
-        return bool(self._is_mobile or settings.is_mobile)
+        return bool(self._is_mobile)
 
     def platform(self) -> str:
         """获取当前平台：web / h5 / mobile"""
+        if self._is_mobile and self._platform in ("web", "", None):
+            return "h5"
         return self._platform or settings.platform
 
     # ==================== 导航与等待 ====================
@@ -112,7 +126,10 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
                 return True
             except Exception as e:
                 if attempt < retry:
-                    self.page.wait_for_timeout(1000)
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                    except Exception:
+                        pass
                     continue
                 return False
         return False
@@ -144,14 +161,20 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
                             ).first
                             if close_btn.is_visible(timeout=1000):
                                 close_btn.click(force=True)
-                                self.page.wait_for_timeout(500)
+                                try:
+                                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                                except Exception:
+                                    pass
                                 break
             except Exception:
                 continue
 
         try:
             self.page.keyboard.press("Escape")
-            self.page.wait_for_timeout(500)
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -180,6 +203,23 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
         except Exception:
             return False
 
+    def first_visible(self, selector: str, timeout: int = 500):
+        """返回第一个可见匹配元素；无可见元素时返回 None"""
+        loc = self.page.locator(selector)
+        for i in range(min(loc.count(), 20)):
+            el = loc.nth(i)
+            try:
+                if el.is_visible(timeout=timeout):
+                    return el
+            except Exception:
+                continue
+        return None
+
+    def visible_locator(self, selector: str, timeout: int = 500):
+        """返回可见元素优先的定位器（兼容 Web/H5 隐藏重复节点）"""
+        el = self.first_visible(selector, timeout=timeout)
+        return el if el is not None else self.page.locator(selector).first
+
     def scroll_to(self, selector: str, timeout: int = 10000) -> None:
         """滚动到指定元素
 
@@ -199,7 +239,10 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
                 )
             except Exception:
                 pass
-        self.page.wait_for_timeout(500)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+        except Exception:
+            pass
 
     def wait_for_url_change(self, old_url: str, timeout: int = 10000) -> bool:
         """等待 URL 发生变化（SPA 路由跳转）"""
@@ -216,7 +259,10 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
     def scroll_to_footer(self) -> None:
         """滚动到页脚"""
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        self.page.wait_for_timeout(1000)
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+        except Exception:
+            pass
 
     def click_customer_service(self) -> None:
         """点击在线客服（默认实现，找不到则跳过）"""
@@ -224,7 +270,13 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
         btn = self.page.locator(selector).first
         if btn.is_visible(timeout=3000):
             self.safe_click(selector)
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=3000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=1500)
+                except Exception:
+                    pass
 
     def click_intent_form(self) -> None:
         """点击意向填报（默认实现，找不到则跳过）"""
@@ -232,7 +284,13 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
         btn = self.page.locator(selector).first
         if btn.is_visible(timeout=3000):
             self.safe_click(selector)
-            self.page.wait_for_timeout(1500)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=2000)
+                except Exception:
+                    pass
 
     # ==================== 截图 ====================
 
@@ -299,3 +357,37 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
         """断言页面无加载失败的图片"""
         broken = self.get_broken_images()
         assert not broken, f"发现加载失败的图片: {broken}"
+
+    # ==================== 页面状态 ====================
+
+    def is_not_found_page(self) -> bool:
+        """检测当前页是否为 404/未找到页面（Nuxt/通用兜底）"""
+        try:
+            title = (self.page.title() or "").lower()
+            body = ""
+            try:
+                body = (self.page.locator("body").inner_text(timeout=1500) or "").lower()
+            except Exception:
+                try:
+                    body = (self.page.content() or "").lower()
+                except Exception:
+                    body = ""
+            url = (self.page.url or "").lower()
+            markers = [
+                "404 - page not found",
+                "page not found",
+                "404 not found",
+                "页面不存在",
+                "未找到页面",
+            ]
+            if any(m in title for m in markers):
+                return True
+            if "404" in body and ("not found" in body or "page not found" in body):
+                return True
+            if "/404" in url:
+                return True
+        except Exception:
+            return False
+        return False
+
+

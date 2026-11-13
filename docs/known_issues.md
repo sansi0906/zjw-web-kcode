@@ -45,7 +45,7 @@
 | 影响范围 | 全站 | 
 | 实际结果 | 首页 86 张图片中 77 张无 `alt`；供应大厅 85 张中 32 张无 `alt`；重点项目 19 张中 18 张无 `alt`；产业政策 10 张中 9 张无 `alt`；云服务 14 张中 13 张无 `alt`；成果转化 14 张中 13 张无 `alt`；产业需求 18 张中 17 张无 `alt`；智能建造 22 张中 21 张无 `alt`；产业新闻 13 张中 4 张无 `alt`；产业协会 17 张中 6 张无 `alt`；供应大厅搜索页 41 张中 10 张无 `alt` |
 | 期望结果 | 装饰性图片使用 `alt=""`，语义图片应有描述性 `alt` |
-| 用例处理 | 暂未写成硬断言，避免大面积噪声；建议修复后补充 |
+| 用例处理 | 测试环境按 `accept_exceeded_on_envs: [test]` 接受缺失（附清单不 xfail），生产环境仍按阈值强制；`tests/test_a11y_basic.py::test_home_images_alt` 复用同一配置 |
 | 建议 | 前端模板补齐 `alt` 属性，装饰图统一 `alt=""` |
 
 ---
@@ -58,7 +58,7 @@
 | 影响范围 | 供应大厅搜索页、智能建造、重点项目、产业政策、产业新闻、产业需求 |
 | 实际结果 | 各存在 1 个 `<input>`，无 `id`+`label[for]` 关联、无 `aria-label`、无 `placeholder`、无 `title` |
 | 期望结果 | 表单控件应有可访问名称 |
-| 用例处理 | 暂未写成硬断言 |
+| 用例处理 | `tests/test_a11y_basic.py::test_home_inputs_labelled` / `test_supply_hall_search_labelled` 检查可见输入是否具备 `aria-label`/`placeholder`/`label`；缺失时失败并输出控件 HTML |
 | 建议 | 为搜索框 / 隐藏分页输入框补充 `aria-label` 或 `title` |
 
 ---
@@ -89,11 +89,49 @@
 
 ---
 
+## DEF-007 H5 菜单不支持 Esc 关闭（次要）
+
+| 项 | 内容 |
+|---|---|
+| 严重级别 | 轻微（交互一致性） |
+| 影响范围 | H5 首页/二级页的注册旁菜单（全屏遮罩 + 导航列表） |
+| 实际结果 | 点击遮罩可关闭菜单；按 `Esc` 无响应，菜单保持展开 |
+| 期望结果 | 与桌面端一致，支持 Esc 关闭 |
+| 用例处理 | `tests/test_homepage_h5_smoke.py::test_h5_menu_escape_close` — 未实现时按前提 `skip` 并记录，不误报为失败 |
+| 建议 | 菜单组件补充 `keydown(Escape)` 监听 |
+
+---
+
+## DEF-008 会展活动详情为同页路由且无独立列表页导航（提示）
+
+| 项 | 内容 |
+|---|---|
+| 严重级别 | 提示（非缺陷） |
+| 影响范围 | `/exhibitionActivity` 列表 → `/exhibitionActivity/detail/<id>` |
+| 实际结果 | 列表卡片由“了解详情”按钮驱动同页路由跳转，卡片本身不可点；列表页顶部无独立面包屑入口 |
+| 期望结果 | 记录为站点实现约定，便于用例稳定断言 |
+| 用例处理 | `pages/exhibition_page.py` + `tests/test_exhibition.py` 按“按钮驱动 + 同页 URL 变化”断言 |
+| 建议 | 如需提升可用性，可让整卡可点并补充面包屑 |
+
+---
+
+## DEF-009 首页语义化/可访问名称缺失（无障碍）
+
+| 项 | 内容 |
+|---|---|
+| 严重级别 | 轻微（无障碍 / SEO） |
+| 影响范围 | 首页 |
+| 实际结果 | 首页未使用 `h1/h2/h3` 标题标签；部分可操作区域为 `div/span` 而非 `button`，无可访问名称 |
+| 期望结果 | 使用语义化标题层级与可聚焦控件 |
+| 用例处理 | `tests/test_a11y_basic.py` — 标题层级缺失按已知实现 `skip`（附计数），无名称控件占比超阈值才失败 |
+| 建议 | 逐步替换为语义化标签，并补充 `aria-label` |
+
+---
+
 ## 已修复（测试代码侧）
 
 | 编号 | 说明 |
 |---|---|
-| FIX-001 | `pages/industry_policy_page.py` 的 `get_active_filter()` 引用了不存在的 `FILTER_政策咨询`（实际为 `FILTER_政策资讯`），调用即抛 `AttributeError` |
 | FIX-002 | `pages/key_project_page.py` 中 `assert_filter_works` 被重复定义，后定义的弱断言（`count >= 0`）覆盖了强断言，导致筛选用例形同虚设 |
 | FIX-003 | `BasePage.click_pagination_page()` 使用 `has-text()` 匹配页码，会误命中 `12` / `20` 等页码，改为精确文本匹配 |
 | FIX-004 | `BasePage.get_pagination_pages()` 未过滤上一页/下一页按钮的空文本，导致页码列表混入空字符串 |

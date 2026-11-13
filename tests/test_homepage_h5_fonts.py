@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 首页 H5 移动端字体一致性测试
 
@@ -13,6 +13,8 @@ from playwright.sync_api import Page
 from pages.home_page import HomePage
 from config.settings import settings
 
+pytestmark = [pytest.mark.fonts, pytest.mark.homepage, pytest.mark.h5, pytest.mark.regression, pytest.mark.serial]
+
 
 def _get_style(page: Page, selector: str) -> dict:
     """获取元素的计算样式"""
@@ -26,6 +28,7 @@ def _get_style(page: Page, selector: str) -> dict:
 
 @allure.feature("首页 H5 字体一致性")
 class TestHomePageH5Fonts:
+
     """首页 H5 移动端字体一致性测试"""
 
     @pytest.fixture(autouse=True)
@@ -34,7 +37,13 @@ class TestHomePageH5Fonts:
         page.set_viewport_size({"width": 390, "height": 844})
         base = settings.base_url.rstrip("/")
         page.goto(base, timeout=30000)
-        page.wait_for_timeout(3000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
         self.page = page
         yield
 

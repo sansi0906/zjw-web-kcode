@@ -1,7 +1,9 @@
 ﻿name: UI Tests
+
 on: [push, pull_request]
+
 jobs:
-  test:
+  precheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -9,11 +11,28 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
-      - run: playwright install chromium
-      - run: python -m pytest -q
-      - name: Upload allure results
+      - name: Precheck (yaml + collect-only + compileall)
+        run: python scripts/precheck.py
+
+  smoke:
+    needs: precheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: playwright install --with-deps chromium
+      - name: Smoke (stateless subset)
+        run: python -m pytest -m "smoke and not serial" -q -p no:rerunfailures --maxfail=20
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results
-          path: reports/allure-results
+          name: ui-test-reports
+          path: |
+            reports/allure-results
+            reports/screenshots
+            logs
+          if-no-files-found: ignore

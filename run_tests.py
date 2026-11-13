@@ -10,6 +10,20 @@ from __future__ import annotations
 
 import os
 import sys
+
+# 确保子进程与终端输出使用 UTF-8，避免 Windows 控制台乱码
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import subprocess
 import argparse
 import shutil
@@ -183,6 +197,10 @@ def run_tests(
     elif headless:
         cmd.append("--headless")
     if parallel > 1:
+        print(
+            "提示: --parallel/-n 依赖 pytest-xdist；当前存在 module 级 shared_page/home_page_shared "
+            "等有状态用例，并行可能 flaky，建议仅对隔离用例集使用。"
+        )
         cmd.extend(["-n", str(parallel)])
     if platform:
         cmd.extend(["--platform", platform])
@@ -253,10 +271,58 @@ def generate_html_report(tester: str = "", remark: str = "", run_dir: str = "") 
     return output_file if os.path.exists(output_file) else ""
 
 
+def _classify_skip(status_details: dict) -> str:
+    """区分 xfail(已知缺陷) 与 前提/环境跳过。"""
+    msg = ((status_details or {}).get("message") or "")
+    if "XFAIL" in msg or msg.startswith("XFailed") or "pytest.xfail" in msg or "reason: 已知缺陷" in msg:
+        return "xfail"
+    return "precondition"
+
+
+def generate_route_matrix(output_dir: str = "") -> str:
+    """从页面对象静态元数据生成路由可用性矩阵（Markdown）。"""
+    import re
+    root = os.path.dirname(__file__)
+    pages_dir = os.path.join(root, "pages")
+    rows = []
+    for name in sorted(os.listdir(pages_dir)):
+        if not name.endswith("_page.py") or name == "base_page.py":
+            continue
+        path = os.path.join(pages_dir, name)
+        try:
+            text = open(path, "r", encoding="utf-8", errors="replace").read()
+        except Exception:
+            continue
+        m_url = re.search(r'^\s*PAGE_URL\s*=\s*["\']([^"\']+)["\']', text, re.M)
+        if not m_url:
+            continue
+        page_url = m_url.group(1)
+        m_status = re.search(r'^\s*ROUTE_STATUS\s*=\s*["\']([^"\']+)["\']', text, re.M)
+        route_status = m_status.group(1) if m_status else "expected_available"
+        m_nav = re.search(r'^\s*SKIP_NAV_ACTIVE_ASSERT\s*=\s*(True|False)', text, re.M)
+        skip_nav = m_nav.group(1) if m_nav else "False"
+        cls_m = re.search(r'^class\s+(\w+)\s*\(', text, re.M)
+        cls = cls_m.group(1) if cls_m else name
+        note = ""
+        if "is_not_found_page" in text and "pytest.skip" in text:
+            note = "内置404路由门禁"
+        rows.append((cls, name, page_url, route_status, skip_nav, note))
+    out_dir = output_dir or os.path.join(root, "reports")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "route_availability_matrix.md")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("# 路由可用性矩阵\n\n")
+        f.write("> 基于页面对象静态元数据生成；运行时以 404/路由门禁与 skip 原因为准。\n\n")
+        f.write("| PageObject | 文件 | PAGE_URL | ROUTE_STATUS | SKIP_NAV_ACTIVE_ASSERT | 备注 |\n")
+        f.write("|---|---|---|---|---|---|\n")
+        for cls, name, page_url, route_status, skip_nav, note in rows:
+            f.write(f"| {cls} | `{name}` | `{page_url}` | `{route_status}` | `{skip_nav}` | {note} |\n")
+    return out_path
+
+
 def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
-    """从 Allure 结果生成 BUG 清单（Markdown）"""
+    """从 Allure 结果生成 BUG 清单（Markdown），并区分失败/已知缺陷(xfail)/前提跳过。"""
     import json
-    import xml.etree.ElementTree as ET
 
     allure_results = os.path.join(run_dir, "allure-results")
     bugs_dir = os.path.join(os.path.dirname(run_dir), "bugs")
@@ -266,11 +332,14 @@ def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
     bug_file = os.path.join(bugs_dir, f"bugs_{timestamp}.md")
 
     failed_tests = []
+    xfail_tests = []
+    precondition_skips = []
     total = passed = failed = skipped = 0
+    xfail_count = precondition_skip_count = 0
 
     if os.path.isdir(allure_results):
         for fname in os.listdir(allure_results):
-            if not fname.endswith(".json"):
+            if not fname.endswith("-result.json"):
                 continue
             fpath = os.path.join(allure_results, fname)
             try:
@@ -279,23 +348,40 @@ def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
             except Exception:
                 continue
 
-            total += 1
             status = data.get("status", "")
+            if status not in ("passed", "failed", "skipped", "broken"):
+                continue
+            total += 1
+            details = data.get("statusDetails", {}) or {}
+            base = {
+                "name": data.get("name", ""),
+                "full_name": data.get("fullName", ""),
+                "status": status,
+                "status_message": details.get("message", ""),
+                "trace": details.get("trace", ""),
+                "duration": data.get("stop", 0) - data.get("start", 0) if data.get("start") else 0,
+                "labels": {l.get("name"): l.get("value") for l in data.get("labels", []) if isinstance(l, dict)},
+            }
             if status == "passed":
                 passed += 1
-            elif status == "failed":
+            elif status in ("failed", "broken"):
                 failed += 1
-                failed_tests.append({
-                    "name": data.get("name", ""),
-                    "full_name": data.get("fullName", ""),
-                    "status": status,
-                    "status_message": data.get("statusDetails", {}).get("message", ""),
-                    "trace": data.get("statusDetails", {}).get("trace", ""),
-                    "duration": data.get("stop", 0) - data.get("start", 0) if data.get("start") else 0,
-                    "labels": {l["name"]: l["value"] for l in data.get("labels", [])},
-                })
+                failed_tests.append(base)
             elif status == "skipped":
                 skipped += 1
+                kind = _classify_skip(details)
+                if kind == "xfail":
+                    xfail_count += 1
+                    xfail_tests.append(base)
+                else:
+                    precondition_skip_count += 1
+                    precondition_skips.append(base)
+
+    route_matrix = ""
+    try:
+        route_matrix = generate_route_matrix(os.path.dirname(run_dir) or os.path.join(os.path.dirname(__file__), "reports"))
+    except Exception:
+        route_matrix = ""
 
     with open(bug_file, "w", encoding="utf-8") as f:
         f.write(f"# BUG 清单\n\n")
@@ -304,17 +390,21 @@ def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
         f.write(f"- **测试人员**: {tester or '未指定'}\n")
         f.write(f"- **测试备注**: {remark or '无'}\n")
         f.write(f"- **生成时间**: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"- **运行目录**: {run_dir}\n\n")
-        f.write(f"## 统计\n\n")
-        f.write(f"| 指标 | 数值 |\n")
-        f.write(f"|------|------|\n")
+        f.write(f"- **运行目录**: {run_dir}\n")
+        if route_matrix:
+            f.write(f"- **路由可用性矩阵**: {route_matrix}\n")
+        f.write("\n## 统计\n\n")
+        f.write("| 指标 | 数值 |\n")
+        f.write("|------|------|\n")
         f.write(f"| 总计 | {total} |\n")
         f.write(f"| 通过 | {passed} |\n")
-        f.write(f"| 失败 | {failed} |\n")
-        f.write(f"| 跳过 | {skipped} |\n\n")
+        f.write(f"| 失败/错误 | {failed} |\n")
+        f.write(f"| 跳过(合计) | {skipped} |\n")
+        f.write(f"| 其中-已知缺陷(xfail) | {xfail_count} |\n")
+        f.write(f"| 其中-前提/环境跳过 | {precondition_skip_count} |\n\n")
 
+        f.write("## 失败用例详情\n\n")
         if failed_tests:
-            f.write(f"## 失败用例详情\n\n")
             for i, bug in enumerate(failed_tests, 1):
                 f.write(f"### {i}. {bug['name']}\n\n")
                 f.write(f"- **全称**: `{bug['full_name']}`\n")
@@ -322,15 +412,38 @@ def generate_bug_list(run_dir: str, tester: str = "", remark: str = "") -> str:
                 if bug["status_message"]:
                     f.write(f"- **错误信息**: {bug['status_message']}\n")
                 if bug["trace"]:
-                    f.write(f"- **堆栈跟踪**:\n\n```\n{bug['trace'][:500]}\n```\n\n")
+                    f.write(f"- **堆栈跟踪**:\n\n```\n{bug['trace'][:800]}\n```\n\n")
                 if bug["labels"]:
                     f.write(f"- **标签**: {bug['labels']}\n")
                 f.write(f"- **耗时**: {bug['duration']}ms\n\n")
         else:
-            f.write(f"## 失败用例详情\n\n")
-            f.write(f"无失败用例。\n\n")
+            f.write("无失败用例。\n\n")
+
+        f.write("## 已知缺陷 (xfail)\n\n")
+        if xfail_tests:
+            for i, bug in enumerate(xfail_tests, 1):
+                f.write(f"### X{i}. {bug['name']}\n\n")
+                f.write(f"- **全称**: `{bug['full_name']}`\n")
+                if bug["status_message"]:
+                    f.write(f"- **原因**: {bug['status_message'][:500]}\n")
+                f.write(f"- **耗时**: {bug['duration']}ms\n\n")
+        else:
+            f.write("无已知缺陷 xfail。\n\n")
+
+        f.write("## 前提/环境跳过\n\n")
+        if precondition_skips:
+            for i, bug in enumerate(precondition_skips, 1):
+                f.write(f"### S{i}. {bug['name']}\n\n")
+                f.write(f"- **全称**: `{bug['full_name']}`\n")
+                if bug["status_message"]:
+                    f.write(f"- **原因**: {bug['status_message'][:500]}\n")
+                f.write(f"- **耗时**: {bug['duration']}ms\n\n")
+        else:
+            f.write("无前提/环境跳过。\n\n")
 
     print(f"BUG 清单已生成: {bug_file}")
+    if route_matrix:
+        print(f"路由可用性矩阵已生成: {route_matrix}")
     return bug_file
 
 
@@ -399,6 +512,8 @@ class TestReportGenerator:
             "passed": 0,
             "failed": 0,
             "skipped": 0,
+            "xfail": 0,
+            "precondition_skip": 0,
             "error": 0,
             "duration": 0.0,
             "pass_rate": 0.0
@@ -494,6 +609,7 @@ class TestReportGenerator:
                 test_info["screenshot_base64"] = screenshot_base64
                 test_info["screenshot_name"] = "测试截图"
         
+        test_info["skip_kind"] = ""
         self.test_results.append(test_info)
         
         # 更新统计
@@ -507,10 +623,17 @@ class TestReportGenerator:
             self.summary["failed"] += 1
         elif status == "skipped":
             self.summary["skipped"] += 1
+            msg = (test_info.get("error_message") or "")
+            if "XFAIL" in msg or msg.startswith("XFailed") or "reason: 已知缺陷" in msg or "pytest.xfail" in msg:
+                self.summary["xfail"] += 1
+                test_info["skip_kind"] = "xfail"
+            else:
+                self.summary["precondition_skip"] += 1
+                test_info["skip_kind"] = "precondition"
         elif status == "broken":
             self.summary["error"] += 1
         
-        # 计算通过率
+        # 计算通过率（按总用例计，含 xfail/前提跳过）
         if self.summary["total"] > 0:
             self.summary["pass_rate"] = (self.summary["passed"] / self.summary["total"]) * 100
     
@@ -901,7 +1024,9 @@ class TestReportGenerator:
                 <option value="">全部状态</option>
                 <option value="passed">通过</option>
                 <option value="failed">失败</option>
-                <option value="skipped">跳过</option>
+                <option value="skipped">跳过(合计)</option>
+                <option value="skipped_xfail">已知缺陷(xfail)</option>
+                <option value="skipped_precondition">前提/环境跳过</option>
                 <option value="broken">错误</option>
             </select>
             
@@ -952,6 +1077,8 @@ class TestReportGenerator:
             rows.forEach(row => {{
                 const module = row.getAttribute('data-module') || '';
                 const status = row.getAttribute('data-status') || '';
+                const skipKind = row.getAttribute('data-skip-kind') || '';
+                const statusKey = (status === 'skipped' && skipKind) ? ('skipped_' + skipKind) : status;
                 const name = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
                 
                 let show = true;
@@ -1000,6 +1127,8 @@ class TestReportGenerator:
     
     def _generate_stats_cards(self) -> str:
         """生成统计卡片"""
+        xfail = self.summary.get("xfail", 0)
+        pre = self.summary.get("precondition_skip", 0)
         return f'''
         <div class="stat-card total">
             <div class="number">{self.summary["total"]}</div>
@@ -1015,7 +1144,15 @@ class TestReportGenerator:
         </div>
         <div class="stat-card skipped">
             <div class="number">{self.summary["skipped"]}</div>
-            <div class="label">跳过</div>
+            <div class="label">跳过(合计)</div>
+        </div>
+        <div class="stat-card skipped" title="pytest.xfail / 已知站点缺陷">
+            <div class="number">{xfail}</div>
+            <div class="label">已知缺陷(xfail)</div>
+        </div>
+        <div class="stat-card skipped" title="404路由/前提不适用/环境条件跳过">
+            <div class="number">{pre}</div>
+            <div class="label">前提/环境跳过</div>
         </div>
         <div class="stat-card error">
             <div class="number">{self.summary["error"]}</div>
@@ -1070,14 +1207,23 @@ class TestReportGenerator:
         """生成测试结果表格行"""
         rows = []
         for i, result in enumerate(self.test_results, 1):
+            skip_kind = result.get("skip_kind", "")
+            status = result.get("status", "unknown")
+            display_status = status
+            if status == "skipped":
+                display_status = "skipped_xfail" if skip_kind == "xfail" else "skipped_precondition"
             status_class = f"status-{result['status']}"
-            status_text = {
+            status_text_map = {
                 "passed": "通过",
                 "failed": "失败",
                 "skipped": "跳过",
                 "broken": "错误",
                 "unknown": "未知"
-            }.get(result["status"], result["status"])
+            }
+            if status == "skipped":
+                status_text = "已知缺陷(xfail)" if skip_kind == "xfail" else "前提/环境跳过"
+            else:
+                status_text = status_text_map.get(status, status)
             
             # 生成详情内容
             details = ""
@@ -1106,7 +1252,7 @@ class TestReportGenerator:
                 </div>'''
             
             row = f'''
-            <tr data-module="{result["feature"]}" data-status="{result["status"]}">
+            <tr data-module="{result["feature"]}" data-status="{result["status"]}" data-skip-kind="{skip_kind}">
                 <td>{i}</td>
                 <td>{result["feature"]}</td>
                 <td>{result["name"]}</td>
