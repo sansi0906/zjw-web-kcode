@@ -1,7 +1,7 @@
 # 测试维护指南
 
 > 适用项目：zjw-web-kcode（天津市建筑产业互联网平台官网，Playwright + Pytest）
-> 测试环境：http://127.0.0.1:3200/
+> 测试环境：<TEST_BASE_URL>
 
 ---
 
@@ -38,13 +38,14 @@ python run_tests.py --env prod
 
 | 环境名 | 地址 | 说明 |
 |--------|------|------|
-| `test` | `http://127.0.0.1:3200/` | 默认，测试环境 |
+| `test` | `http://127.0.0.1:3200/` | 默认本地地址；内网/联调地址通过 `TEST_BASE_URL` 注入 |
 | `prod` | `https://www.tjjzcy.com/` | 生产环境 |
 
 环境注册表定义在 `config/settings.py` 的 `ENV_URLS`，是**唯一事实来源**：
 
 ```python
 ENV_URLS = {
+    # 默认本地地址，内网/联调地址请通过 TEST_BASE_URL 或 .env 注入（不要写入仓库）
     "test": "http://127.0.0.1:3200/",
     "prod": "https://www.tjjzcy.com/",
 }

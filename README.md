@@ -1,6 +1,6 @@
 # 天津市建筑产业互联网平台 - Web UI 自动化测试框架 (zjw-web-kcode)
 
-一个基于 **Playwright + pytest** 的 Web UI 自动化测试框架，专注于[天津市建筑产业互联网平台](http://127.0.0.1:3200/)的功能测试、回归测试和质量保障。
+一个基于 **Playwright + pytest** 的 Web UI 自动化测试框架，专注于天津市建筑产业互联网平台（被测地址通过 `TEST_BASE_URL` 注入，不写入仓库）的功能测试、回归测试和质量保障。
 
 ## 架构总览
 
@@ -114,7 +114,7 @@ python run_tests.py --env dev --headless --screenshot-all
 python run_tests.py --parallel 4
 
 # 指定测试地址（覆盖环境配置）
-python run_tests.py --test-url "http://127.0.0.1:3200/"
+python run_tests.py --test-url "<TEST_BASE_URL>"
 
 # 清理超过7天的旧报告
 python run_tests.py --clean-old --keep-days 7
@@ -192,10 +192,10 @@ allure generate reports/allure-results -o reports/html --clean
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `TEST_ENV` | 环境名称 | `dev` |
-| `TEST_BASE_URL` | 测试地址 | `http://127.0.0.1:3200/` |
-| `BROWSER_HEADLESS` | 无头模式 | `false` |
-| `BROWSER_SLOW_MO` | 慢动作（ms） | `500` |
+| `TEST_ENV` | 环境名称 | `test` |
+| `TEST_BASE_URL` | 测试地址（内网/联调地址在此注入） | `http://127.0.0.1:3200/` |
+| `BROWSER_HEADLESS` | 无头模式 | `true` |
+| `BROWSER_SLOW_MO` | 慢动作（ms） | `0` |
 | `BROWSER_TIMEOUT` | 超时时间（ms） | `30000` |
 | `VIEWPORT_WIDTH` | 视口宽度 | `1920` |
 | `VIEWPORT_HEIGHT` | 视口高度 | `1080` |

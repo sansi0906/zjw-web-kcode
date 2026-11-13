@@ -2,7 +2,7 @@
 配置管理 - 集中管理所有测试配置
 
 环境只有两套，不存在第三套：
-    test : http://127.0.0.1:3200/    （默认）
+    test : http://127.0.0.1:3200/    （默认；用 TEST_BASE_URL 指向内网/联调地址）
     prod : https://www.tjjzcy.com/
 
 配置优先级（从高到低）：
@@ -18,6 +18,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # ==================== 环境注册表（仅两套环境） ====================
+# 被测站点地址不落库：本地默认 127.0.0.1，内网/联调地址通过 TEST_BASE_URL 或 .env 注入
 ENV_URLS: dict[str, str] = {
     "test": "http://127.0.0.1:3200/",
     "prod": "https://www.tjjzcy.com/",

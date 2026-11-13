@@ -1,6 +1,6 @@
 # 字体一致性测试用例
 
-> 测试环境：http://127.0.0.1:3200/
+> 测试环境：<TEST_BASE_URL>
 > Web 端 viewport：1920x1080；H5 端 viewport：390x844
 > 对比属性统一为：fontFamily、fontSize、fontWeight、color
 > 当前字体一致性用例总数：**62 个**（全部通过）

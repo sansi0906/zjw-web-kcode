@@ -1278,7 +1278,7 @@ def main() -> int:
     python run_tests.py --env staging --headless
     python run_tests.py --screenshot-all
     python run_tests.py --parallel 4
-    python run_tests.py --test-url "http://127.0.0.1:3200/"
+    python run_tests.py --test-url "<TEST_BASE_URL>"
     python run_tests.py --clean-old --keep-days 7
         """,
     )

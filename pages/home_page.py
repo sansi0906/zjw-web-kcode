@@ -1,6 +1,6 @@
 """
 首页 Page Object - 基于改版后实际元素
-URL: http://127.0.0.1:3200/
+URL: <TEST_BASE_URL>
 """
 from __future__ import annotations
 

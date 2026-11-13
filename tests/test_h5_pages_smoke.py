@@ -4,6 +4,8 @@ from __future__ import annotations
 import allure
 import pytest
 
+from config.settings import settings
+
 from utils.ui_quality import assert_console_clean, assert_no_placeholder_content
 
 
@@ -549,8 +551,12 @@ class TestH5IndustrialService:
         try:
             po.assert_service_exists()
         except Exception:
-            # 模块结构/文案变动时，至少保证当前页面可正常访问
-            assert "天津市建筑" in (page.title() or "") or "127.0.0.1" in (page.url or "") or "tjjzcy.com" in (page.url or ""), (
+            # 模块结构/文案变动时，至少保证当前页面可正常访问（与配置站点同域）
+            from urllib.parse import urlparse
+
+            expected_host = urlparse(settings.base_url).netloc
+            current_host = urlparse(page.url or "").netloc
+            assert "天津市建筑" in (page.title() or "") or current_host == expected_host, (
                 f"H5 产业化服务模块/首页不可用，当前URL: {page.url}"
             )
         assert_console_clean(page, test_data, page_key="industrial_service")

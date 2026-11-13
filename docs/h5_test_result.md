@@ -2,7 +2,7 @@
 
 ## 测试环境
 - **设备仿真**：Playwright 内置设备 `iPhone 12`（375×812，User-Agent、DPR、触摸等均模拟真实移动端）
-- **测试地址**：http://127.0.0.1:3200/
+- **测试地址**：<TEST_BASE_URL>
 - **测试框架**：pytest + playwright + allure
 - **执行时间**：116.07s
 
