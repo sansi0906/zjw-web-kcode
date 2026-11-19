@@ -23,6 +23,7 @@ zjw-web-kcode/
 │   ├── achievement_transformation_page.py # 成果转化
 │   ├── cloud_service_page.py    # 云服务
 │   └── industrial_service_page.py       # 产业化服务
+    │   └── finance_page.py                  # 产业金融
 ├── tests/                       # 测试用例
 │   ├── __init__.py
 │   ├── conftest.py              # Fixtures & Hooks（全局）

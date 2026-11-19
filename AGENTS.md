@@ -53,6 +53,7 @@
 - 登录：为首页弹窗（非 `/login`），账号 + 验证码 + 协议勾选；未勾选协议/空表单由受控组件拦截并提示。注册：`/register`，必填项/协议未满足时“提交注册”禁用。
 - H5 菜单：全屏遮罩 `div[class*='top-[48px]']` + 导航列表；遮罩点击可关闭，**Esc 关闭未实现**（`test_h5_menu_escape_close` 按前提 skip）。
 - 404：Nuxt 未匹配路由返回 `404 / Page not found: <path> / Go back home`，Web/H5 一致。
+- 产业金融：`/finance`，H1 产业金融发展/平台支持企业融资；卡片 `.finance-card`（标题 h3：支持融资/合同融资/农务工支持融资，按钮 查看详情/申请融资）；顶部功能按钮（平台支持企业融资/企业融资/查看全部/申请融资）；悬浮 在线客服/意向填报。
 
 ## 修改后验证（最小集）
 1. `python -m compileall -q <changed>`
