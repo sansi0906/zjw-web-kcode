@@ -24,11 +24,19 @@ class TestIndustryNewsFonts(BasePageTest):
             self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
         except Exception:
             pass
-        title_texts = ["饿飞飞飞我分为", "测试新增", "开幕！2025第五届国际工程建设供应链博览会！"]
+        # 标题文本不硬编码：站点内容会变动，改为从页面抓取前 N 个 h2 标题做字体一致性对比
+        titles = self.page_obj.page.evaluate(
+            """() => Array.from(document.querySelectorAll('h2, h3, .title, [class*="title"]'))
+                .map(e => (e.textContent||'').trim().slice(0,40))
+                .filter(t => t && !t.includes('登录') && !t.includes('注册') && !t.includes('|'))"""
+        )
+        titles = titles[:8]
+        if len(titles) < 2:
+            pytest.skip("当前环境未找到足够新闻标题（<2），无法验证字体一致性")
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
-        for text in title_texts:
-            el = self.page_obj.page.locator(f"h2:has-text('{text}')").first
+        for text in titles:
+            el = self.page_obj.page.locator(f"h2:has-text('{text}'), h3:has-text('{text}'), [class*='title']:has-text('{text}')").first
             if el.is_visible():
                 style = el.evaluate(
                     "(el) => { const s = getComputedStyle(el); return { fontFamily: s.fontFamily, fontSize: s.fontSize, fontWeight: s.fontWeight, color: s.color }; }"
@@ -56,11 +64,19 @@ class TestIndustryNewsFonts(BasePageTest):
             self.page_obj.page.wait_for_load_state("networkidle", timeout=5000)
         except Exception:
             pass
-        desc_texts = ["微风范围分为访问范围", "范围分为访问范围", "时代大厦是的是的是多少打撒"]
+        # 描述文本同样不硬编码：抓取前 N 个 p/li 描述做字体一致性对比
+        desc_texts = self.page_obj.page.evaluate(
+            """() => Array.from(document.querySelectorAll('p, li, .desc, [class*="desc"]'))
+                .map(e => (e.textContent||'').trim().slice(0,40))
+                .filter(t => t && !t.includes('登录') && !t.includes('注册') && !t.includes('|'))"""
+        )
+        desc_texts = desc_texts[:8]
+        if len(desc_texts) < 2:
+            pytest.skip("当前环境未找到足够新闻描述（<2），无法验证字体一致性")
         style_keys = ["fontFamily", "fontSize", "fontWeight", "color"]
         styles = {}
         for text in desc_texts:
-            el = self.page_obj.page.locator(f"p:has-text('{text}')").first
+            el = self.page_obj.page.locator(f"p:has-text('{text}'), li:has-text('{text}'), [class*='desc']:has-text('{text}')").first
             if el.is_visible():
                 style = el.evaluate(
                     "(el) => { const s = getComputedStyle(el); return { fontFamily: s.fontFamily, fontSize: s.fontSize, fontWeight: s.fontWeight, color: s.color }; }"

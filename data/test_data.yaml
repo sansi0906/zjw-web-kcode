@@ -49,6 +49,8 @@ navigation:
       url_fragment: achievementTransformation
     - text: 云服务
       url_fragment: cloudService
+    - text: 产业金融
+      url_fragment: finance
 filter_tabs:
   key_projects:
   - 房建项目
@@ -309,6 +311,20 @@ font_tests:
       - 在线客服
       - 意向填报
       selector: div:has-text('{text}')
+      style_keys:
+      - fontFamily
+      - fontSize
+      - fontWeight
+      - color
+      min_visible: 2
+      optional: true
+  finance:
+    finance_card_title:
+      texts:
+      - 支持融资
+      - 合同融资
+      - 农务工支持融资
+      selector: h3:has-text('{text}')
       style_keys:
       - fontFamily
       - fontSize
