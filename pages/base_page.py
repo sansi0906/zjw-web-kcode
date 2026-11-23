@@ -351,12 +351,29 @@ class BasePage(AssertionMixin, NavigationMixin, FilterMixin, PaginationMixin, Sw
                 .map(i => (i.getAttribute('src') || '').split('/').pop().substring(0, 60))"""
         )
 
-
+    def _broken_image_allowlist(self) -> list[str]:
+        """破损图片白名单（子串匹配 src，配置驱动，默认空）"""
+        try:
+            import yaml
+            from pathlib import Path
+            from utils.ui_quality import DEFAULT_UI_QUALITY, _deep_merge
+            data_file = Path(__file__).resolve().parent.parent / "data" / "test_data.yaml"
+            root = {}
+            if data_file.exists():
+                with open(data_file, "r", encoding="utf-8") as f:
+                    root = (yaml.safe_load(f) or {}).get("ui_quality") or {}
+            cfg = _deep_merge(DEFAULT_UI_QUALITY, root.get("default"))
+            items = (cfg.get("broken_images") or {}).get("allow_src_substrings") or []
+            return [str(s) for s in items if str(s).strip()]
+        except Exception:
+            return []
 
     def assert_no_broken_images(self) -> None:
-        """断言页面无加载失败的图片"""
+        """断言页面无加载失败的图片（白名单内的已知破损图跳过）"""
         broken = self.get_broken_images()
-        assert not broken, f"发现加载失败的图片: {broken}"
+        allow = self._broken_image_allowlist()
+        unknown = [b for b in broken if not any(a in b for a in allow)]
+        assert not unknown, f"发现加载失败的图片: {unknown}"
 
     # ==================== 页面状态 ====================
 

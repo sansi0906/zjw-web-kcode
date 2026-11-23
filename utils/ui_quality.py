@@ -50,6 +50,10 @@ DEFAULT_UI_QUALITY = {
         # 环境策略：测试环境允许测试数据占位内容，不做占位符内容校验；生产环境强制校验
         "enforce_on_envs": ["prod"],
     },
+    "broken_images": {
+        "enabled": True,
+        "allow_src_substrings": [],
+    },
 }
 
 

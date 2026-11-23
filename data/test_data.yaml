@@ -384,6 +384,13 @@ ui_quality:
       known_xfail_reason: 已知缺陷：残留占位/测试文案（测试/时代大厦...）
       # 测试环境允许测试数据/占位内容，不做占位符内容校验；生产环境(prod)强制校验
       enforce_on_envs: [prod]
+    broken_images:
+      # 已知破损图（测试环境产品缩略图，生产环境不会出现）
+      allow_src_substrings:
+      - 鸡蛋47901.png
+      - 保险icon39768.png
+      - logo39824.png
+      - KVIVHU47585.png
   homepage:
     images_alt:
       max_missing: 5

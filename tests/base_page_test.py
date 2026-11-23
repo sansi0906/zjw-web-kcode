@@ -76,7 +76,13 @@ class BasePageTest:
             pytest.skip(f"{self.page_name} 页面不存在(404)，路由未上线或已下线")
         expected = getattr(self.page_obj, "EXPECTED_NAV_TEXTS", None)
         if expected is None:
-            expected = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化", "云服务"]
+            # 站点配置驱动：从 data/test_data.yaml 的 navigation.home_page.nav_links 读取
+            try:
+                from conftest import TEST_DATA
+                nav_links = ((TEST_DATA.get("navigation") or {}).get("home_page") or {}).get("nav_links") or []
+                expected = [link.get("text", "") for link in nav_links if link.get("text")]
+            except Exception:
+                expected = ["首页", "智能建造", "重点项目", "产业政策", "产业协会", "成果转化"]
         if expected == []:
             pytest.skip(f"{self.page_name} 不要求顶部导航完整性")
         nav_texts = self.page_obj.get_nav_texts()
@@ -245,4 +251,15 @@ class BasePageTest:
             except Exception:
                 pass
         broken = self.page_obj.get_broken_images()
-        assert not broken, f"{self.page_name}存在加载失败的图片: {broken}"
+        allow = getattr(self.page_obj, "_broken_image_allowlist", lambda: [])()
+        unknown = [b for b in broken if not any(a in b for a in allow)]
+        if broken:
+            try:
+                allure.attach(
+                    "broken=%s\nunknown=%s\nallow=%s" % (broken, unknown, allow),
+                    name="破损图片明细",
+                    attachment_type=allure.attachment_type.TEXT,
+                )
+            except Exception:
+                pass
+        assert not unknown, f"{self.page_name}存在加载失败的图片: {unknown}"

@@ -18,14 +18,16 @@ class FinancePage(BasePage):
     NAV_FINANCE = "text=产业金融"
 
     # 金融卡片
-    FINANCE_CARD = ".finance-card, [class*='finance-card'], [class*='card']"
-    FINANCE_CARD_MOBILE = (
-        ".finance-card, [class*='finance-card'], [class*='card'], "
-        "[class*='finance-card-mobile'], .n-carousel__slide"
-    )
+    FINANCE_CARD = ".finance-card"
     FINANCE_CARD_TITLE = "h3, h2, .title, [class*='title']"
     FINANCE_CARD_DESC = "p, .desc, [class*='desc']"
     FINANCE_CARD_BUTTON = "button"
+
+    # H5：移动 UA 访问 /finance 会被前端重定向到 /financeProductType 产品列表页
+    H5_FINANCE_PAGE_FRAGMENT = "financeProductType"
+    H5_FINANCE_ROOT = ".finance-product-type-mobile"
+    H5_FINANCE_CARD = ".finance-product-type-mobile div.cursor-pointer:has(h2)"
+    H5_FINANCE_VIEW_TEXT = "查看产品"
 
     # 申报入口按钮
     HERO_BUTTON_APPLY = "text=申请融资"
@@ -56,42 +58,54 @@ class FinancePage(BasePage):
                 pass
         return self
 
+    def _is_h5_finance_page(self) -> bool:
+        """判断当前是否 H5 产业金融产品列表页（/financeProductType）"""
+        if not self.is_mobile():
+            return False
+        return self.H5_FINANCE_PAGE_FRAGMENT in (self.page.url or "")
+
+    def _h5_card_locator(self):
+        return self.page.locator(self.H5_FINANCE_CARD)
+
     def get_finance_count(self) -> int:
-        if self.is_mobile():
-            return self.page.locator(self.FINANCE_CARD_MOBILE).count()
-        return self.page.locator(self.FINANCE_CARD).count()
+        try:
+            if self._is_h5_finance_page():
+                return self._h5_card_locator().count()
+            return self.page.evaluate("document.querySelectorAll('.finance-card').length")
+        except Exception:
+            return 0
 
     def get_finance_titles(self) -> list[str]:
-        if self.is_mobile():
-            cards = self.page.locator(self.FINANCE_CARD_MOBILE)
-        else:
-            cards = self.page.locator(self.FINANCE_CARD)
-        titles = []
-        for i in range(min(cards.count(), 20)):
-            try:
-                title = cards.nth(i).text_content()
-                if title and title.strip():
-                    titles.append(title.strip()[:50])
-            except Exception:
-                continue
-        return titles
+        try:
+            if self._is_h5_finance_page():
+                texts = self.page.evaluate(
+                    """() => Array.from(document.querySelectorAll('.finance-product-type-mobile div.cursor-pointer'))
+                        .map(e => { const h = e.querySelector('h2'); return h ? (h.textContent||'').trim().slice(0,50) : ''; })
+                        .filter(t => t)"""
+                )
+                return texts
+            texts = self.page.evaluate(
+                """() => Array.from(document.querySelectorAll('.finance-card'))
+                    .map(e => (e.textContent||'').trim().slice(0,50))
+                    .filter(t => t)"""
+            )
+            return texts
+        except Exception:
+            return []
 
     def get_finance_card_titles(self) -> list[str]:
-        """获取金融卡片标题（h3）"""
-        if self.is_mobile():
-            cards = self.page.locator(self.FINANCE_CARD_MOBILE)
-        else:
-            cards = self.page.locator(self.FINANCE_CARD)
-        titles = []
-        for i in range(min(cards.count(), 20)):
-            try:
-                title_el = cards.nth(i).locator("h3, h2, .title, [class*='title']").first
-                title = title_el.text_content()
-                if title and title.strip():
-                    titles.append(title.strip()[:50])
-            except Exception:
-                continue
-        return titles
+        """获取金融卡片标题"""
+        try:
+            if self._is_h5_finance_page():
+                return self.get_finance_titles()
+            texts = self.page.evaluate(
+                """() => Array.from(document.querySelectorAll('.finance-card h3, .finance-card h2, .finance-card .title, .finance-card [class*="title"]'))
+                    .map(e => (e.textContent||'').trim().slice(0,50))
+                    .filter(t => t)"""
+            )
+            return texts
+        except Exception:
+            return []
 
     def assert_finance_exists(self, min_count: int = 1) -> None:
         count = self.get_finance_count()
@@ -108,8 +122,8 @@ class FinancePage(BasePage):
         assert count >= min_count, f"期望金融卡片数量 >= {min_count}，实际为 {count}"
 
     def click_first_finance(self) -> None:
-        if self.is_mobile():
-            card = self.page.locator(self.FINANCE_CARD_MOBILE).first
+        if self._is_h5_finance_page():
+            card = self._h5_card_locator().first
         else:
             card = self.page.locator(self.FINANCE_CARD).first
         if card.is_visible():
