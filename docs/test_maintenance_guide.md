@@ -179,6 +179,9 @@ class TestXxx(BasePageTest):
 | 重点项目 / 产业政策筛选激活态 class 拼写错误 | 选中项 class 为 `text[#1653FF]`（缺中括号），浏览器不解析，只能靠 `.active-border` 下划线识别 |
 | 供应大厅真正筛选在 `/supplyHall/search` | 首页 `/supplyHall` 上的分类项是跳转入口，不是 in-place 筛选 |
 | 产业政策 / 产业新闻列表结构不同 | 产业政策用 `div` 列表，产业新闻用 `<article>` 列表 |
+| 导航栏已移除「云服务」 | `test_nav_completeness` 改为从 `data/test_data.yaml.navigation.home_page.nav_links` 读取预期文本，不再硬编码 |
+| H5 `/finance` 重定向到 `/financeProductType` | 移动 UA 下服务端/前端重定向，`FinancePage` 需按 `is_mobile()` + URL 片段区分卡片选择器 |
+| 已知破损图白名单 | `data/test_data.yaml.ui_quality.default.broken_images.allow_src_substrings`（子串匹配 src），`BasePage._broken_image_allowlist()` 读取 |
 
 ### Playwright 选择器坑
 

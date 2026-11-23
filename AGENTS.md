@@ -27,6 +27,8 @@
 - 禁止批量替换 `wait_for_timeout`；按文件/方法逐步改为可观察等待：`expect` / `wait_for_url` / `wait_for_load_state` / `wait_for_function` / 轮询。
 - 仅在**无可靠 DOM/状态事件**且有注释说明时保留极短兜底（当前仅 `tests/test_homepage_full.py` 中 hover 截图前 200ms）。
 - 轮询间隔（如 `tests/test_key_projects.py` 翻页后比对列表文本的 200ms 间隔）属于显式轮询循环，不算硬等待兜底。
+- 已知破损图白名单：`data/test_data.yaml.ui_quality.default.broken_images.allow_src_substrings`（子串匹配 src），`BasePage._broken_image_allowlist()` 读取；新增已知破损图优先配置而非硬编码。
+- 导航完整性断言：`tests/base_page_test.py.test_nav_completeness` 默认从 `data/test_data.yaml.navigation.home_page.nav_links` 读取预期导航文本（站点配置驱动），不再硬编码「云服务」；页面对象可通过 `EXPECTED_NAV_TEXTS` 显式覆盖。
 
 ## 数据与防漂移
 - 集中数据：`data/test_data.yaml`（含 `schema_version`）。易变站点文案使用 `min_visible` / `optional` / `scroll_into_view`。
