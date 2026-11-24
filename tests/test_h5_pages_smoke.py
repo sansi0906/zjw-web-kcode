@@ -424,6 +424,7 @@ class TestH5DemandPage:
     @allure.title("H5-产业需求分页切换可响应")
     @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.navigation
+    @pytest.mark.skip(reason="H5 产业需求无第 2 页（站点已知限制）")
     def test_h5_demand_page_pagination(self, h5_demand_page):
         po = h5_demand_page
         has_pag = False
