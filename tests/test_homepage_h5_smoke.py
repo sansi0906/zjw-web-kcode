@@ -568,6 +568,13 @@ class TestHomePageH5Smoke:
         self._click_h5_menu_item("成果转化", "achievementTransformation")
 
     @allure.story("菜单导航")
+    @allure.title("H5-菜单跳转-产业金融")
+    @allure.severity(allure.severity_level.CRITICAL)
+    @pytest.mark.navigation
+    def test_h5_menu_nav_finance(self):
+        self._click_h5_menu_item("产业金融", "finance")
+
+    @allure.story("菜单导航")
     @allure.title("H5-菜单跳转-云服务")
     @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.navigation
