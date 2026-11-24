@@ -24,13 +24,6 @@ class TestCloudServiceFonts(BasePageTest):
     EXPECTED_NAV_TEXTS = []
     SKIP_NAV_ACTIVE_ASSERT = True
 
-    # 云服务页面本身无顶部导航栏，不继承 BasePageTest 的导航相关通用用例
-    def test_nav_completeness(self) -> None:
-        pytest.skip("云服务页面无顶部导航栏，不适用导航完整性断言")
-
-    def test_nav_active_state(self) -> None:
-        pytest.skip("云服务页面无顶部导航栏，不适用导航高亮断言")
-
     @allure.story("字体一致性")
     @allure.title("云服务名称字体一致性")
     @allure.severity(allure.severity_level.MINOR)
