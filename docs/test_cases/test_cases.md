@@ -217,41 +217,41 @@
 | TC-096 | TestAchievementTransformation.test_filter_成果 | 成果筛选 | 严重 |
 | TC-097 | TestAchievementTransformation.test_achievement_cards_display | 成果卡片展示 | 严重 |
 | TC-098 | TestAchievementTransformation.test_achievement_click | 成果卡片点击跳转 | 严重 |
-| TC-136 | TestAchievementTransformation.test_page_load | 页面正常加载 | 严重 |
-| TC-137 | TestAchievementTransformation.test_nav_completeness | 导航栏完整性 | 严重 |
-| TC-138 | TestAchievementTransformation.test_nav_active_state | 链接高亮 | 一般 |
-| TC-139 | TestAchievementTransformation.test_customer_service_button | 在线客服按钮 | 一般 |
-| TC-140 | TestAchievementTransformation.test_intent_form_button | 意向填报按钮 | 一般 |
-| TC-141 | TestAchievementTransformation.test_footer_phone | 服务电话链接 | 轻微 |
-| TC-142 | TestAchievementTransformation.test_footer_icp | 备案号链接 | 轻微 |
-| TC-143 | TestAchievementTransformation.test_no_horizontal_overflow | 无横向溢出 | 一般 |
-| TC-144 | TestAchievementTransformation.test_no_broken_images | 图片加载正常 | 一般 |
-| TC-145 | TestAchievementTransformationFonts.test_page_load | 页面正常加载 | 严重 |
-| TC-146 | TestAchievementTransformationFonts.test_nav_completeness | 导航栏完整性 | 严重 |
-| TC-147 | TestAchievementTransformationFonts.test_nav_active_state | 链接高亮 | 一般 |
-| TC-148 | TestAchievementTransformationFonts.test_customer_service_button | 在线客服按钮 | 一般 |
-| TC-149 | TestAchievementTransformationFonts.test_intent_form_button | 意向填报按钮 | 一般 |
-| TC-150 | TestAchievementTransformationFonts.test_footer_phone | 服务电话链接 | 轻微 |
-| TC-151 | TestAchievementTransformationFonts.test_footer_icp | 备案号链接 | 轻微 |
-| TC-152 | TestAchievementTransformationFonts.test_no_horizontal_overflow | 无横向溢出 | 一般 |
-| TC-153 | TestAchievementTransformationFonts.test_no_broken_images | 图片加载正常 | 一般 |
-| TC-154 | TestAchievementTransformationFonts.test_at_project_title_font_consistency | 成果转化项目标题字体一致性 | 轻微 |
-| TC-155 | TestAchievementTransformationFonts.test_at_institution_name_font_consistency | 成果转化机构名称字体一致性 | 轻微 |
-| TC-156 | TestAchievementTransformationFonts.test_at_company_font_consistency | 成果转化研发单位字体一致性 | 轻微 |
-| TC-157 | TestAchievementTransformationFonts.test_at_tech_tag_font_consistency | 成果转化技术方向标签字体一致性 | 轻微 |
+| TC-138 | TestAchievementTransformation.test_page_load | 页面正常加载 | 严重 |
+| TC-139 | TestAchievementTransformation.test_nav_completeness | 导航栏完整性 | 严重 |
+| TC-140 | TestAchievementTransformation.test_nav_active_state | 链接高亮 | 一般 |
+| TC-141 | TestAchievementTransformation.test_customer_service_button | 在线客服按钮 | 一般 |
+| TC-142 | TestAchievementTransformation.test_intent_form_button | 意向填报按钮 | 一般 |
+| TC-143 | TestAchievementTransformation.test_footer_phone | 服务电话链接 | 轻微 |
+| TC-144 | TestAchievementTransformation.test_footer_icp | 备案号链接 | 轻微 |
+| TC-145 | TestAchievementTransformation.test_no_horizontal_overflow | 无横向溢出 | 一般 |
+| TC-146 | TestAchievementTransformation.test_no_broken_images | 图片加载正常 | 一般 |
+| TC-147 | TestAchievementTransformationFonts.test_page_load | 页面正常加载 | 严重 |
+| TC-148 | TestAchievementTransformationFonts.test_nav_completeness | 导航栏完整性 | 严重 |
+| TC-149 | TestAchievementTransformationFonts.test_nav_active_state | 链接高亮 | 一般 |
+| TC-150 | TestAchievementTransformationFonts.test_customer_service_button | 在线客服按钮 | 一般 |
+| TC-151 | TestAchievementTransformationFonts.test_intent_form_button | 意向填报按钮 | 一般 |
+| TC-152 | TestAchievementTransformationFonts.test_footer_phone | 服务电话链接 | 轻微 |
+| TC-153 | TestAchievementTransformationFonts.test_footer_icp | 备案号链接 | 轻微 |
+| TC-154 | TestAchievementTransformationFonts.test_no_horizontal_overflow | 无横向溢出 | 一般 |
+| TC-155 | TestAchievementTransformationFonts.test_no_broken_images | 图片加载正常 | 一般 |
+| TC-156 | TestAchievementTransformationFonts.test_at_project_title_font_consistency | 成果转化项目标题字体一致性 | 轻微 |
+| TC-157 | TestAchievementTransformationFonts.test_at_institution_name_font_consistency | 成果转化机构名称字体一致性 | 轻微 |
+| TC-158 | TestAchievementTransformationFonts.test_at_company_font_consistency | 成果转化研发单位字体一致性 | 轻微 |
+| TC-159 | TestAchievementTransformationFonts.test_at_tech_tag_font_consistency | 成果转化技术方向标签字体一致性 | 轻微 |
 
 ### 云服务（25）
 
 | 编号 | 用例名称 | 用例标题 | 严重程度 |
 |------|----------|----------|----------|
-| TC-099 | TestCloudService.test_no_console_errors | 控制台无未知错误 | 一般 |
-| TC-100 | TestCloudService.test_no_placeholder_content | 无未知测试占位符内容 | 一般 |
-| TC-101 | TestCloudService.test_service_cards_display | 全部服务筛选 | 严重 |
-| TC-102 | TestCloudService.test_service_click | 服务卡片点击跳转 | 严重 |
-| TC-103 | TestCloudService.test_view_all_button | 查看全部服务按钮 | 一般 |
-| TC-158 | TestCloudService.test_page_load | 页面正常加载 | 严重 |
-| TC-159 | TestCloudService.test_nav_completeness | 导航栏完整性 | 严重 |
-| TC-160 | TestCloudService.test_nav_active_state | 链接高亮 | 一般 |
+| TC-099 | TestCloudService.test_nav_completeness | test_nav_completeness | 一般 |
+| TC-100 | TestCloudService.test_nav_active_state | test_nav_active_state | 一般 |
+| TC-101 | TestCloudService.test_no_console_errors | 控制台无未知错误 | 一般 |
+| TC-102 | TestCloudService.test_no_placeholder_content | 无未知测试占位符内容 | 一般 |
+| TC-103 | TestCloudService.test_service_cards_display | 全部服务筛选 | 严重 |
+| TC-104 | TestCloudService.test_service_click | 服务卡片点击跳转 | 严重 |
+| TC-105 | TestCloudService.test_view_all_button | 查看全部服务按钮 | 一般 |
+| TC-160 | TestCloudService.test_page_load | 页面正常加载 | 严重 |
 | TC-161 | TestCloudService.test_customer_service_button | 在线客服按钮 | 一般 |
 | TC-162 | TestCloudService.test_intent_form_button | 意向填报按钮 | 一般 |
 | TC-163 | TestCloudService.test_footer_phone | 服务电话链接 | 轻微 |
@@ -259,14 +259,14 @@
 | TC-165 | TestCloudService.test_no_horizontal_overflow | 无横向溢出 | 一般 |
 | TC-166 | TestCloudService.test_no_broken_images | 图片加载正常 | 一般 |
 | TC-167 | TestCloudServiceFonts.test_page_load | 页面正常加载 | 严重 |
-| TC-168 | TestCloudServiceFonts.test_nav_completeness | 导航栏完整性 | 严重 |
-| TC-169 | TestCloudServiceFonts.test_nav_active_state | 链接高亮 | 一般 |
-| TC-170 | TestCloudServiceFonts.test_customer_service_button | 在线客服按钮 | 一般 |
-| TC-171 | TestCloudServiceFonts.test_intent_form_button | 意向填报按钮 | 一般 |
-| TC-172 | TestCloudServiceFonts.test_footer_phone | 服务电话链接 | 轻微 |
-| TC-173 | TestCloudServiceFonts.test_footer_icp | 备案号链接 | 轻微 |
-| TC-174 | TestCloudServiceFonts.test_no_horizontal_overflow | 无横向溢出 | 一般 |
-| TC-175 | TestCloudServiceFonts.test_no_broken_images | 图片加载正常 | 一般 |
+| TC-168 | TestCloudServiceFonts.test_customer_service_button | 在线客服按钮 | 一般 |
+| TC-169 | TestCloudServiceFonts.test_intent_form_button | 意向填报按钮 | 一般 |
+| TC-170 | TestCloudServiceFonts.test_footer_phone | 服务电话链接 | 轻微 |
+| TC-171 | TestCloudServiceFonts.test_footer_icp | 备案号链接 | 轻微 |
+| TC-172 | TestCloudServiceFonts.test_no_horizontal_overflow | 无横向溢出 | 一般 |
+| TC-173 | TestCloudServiceFonts.test_no_broken_images | 图片加载正常 | 一般 |
+| TC-174 | TestCloudServiceFonts.test_nav_completeness | test_nav_completeness | 一般 |
+| TC-175 | TestCloudServiceFonts.test_nav_active_state | test_nav_active_state | 一般 |
 | TC-176 | TestCloudServiceFonts.test_cs_service_name_font_consistency | 云服务名称字体一致性 | 轻微 |
 | TC-177 | TestCloudServiceFonts.test_cs_service_desc_font_consistency | 云服务服务描述字体一致性 | 轻微 |
 
@@ -274,32 +274,32 @@
 
 | 编号 | 用例名称 | 用例标题 | 严重程度 |
 |------|----------|----------|----------|
-| TC-104 | TestSupplyHall.test_no_console_errors | 控制台无未知错误 | 一般 |
-| TC-105 | TestSupplyHall.test_no_placeholder_content | 无未知测试占位符内容 | 一般 |
-| TC-106 | TestSupplyHall.test_images_alt_text | 图片alt文本检查 | 轻微 |
-| TC-107 | TestSupplyHall.test_supply_hall_page_load | 供应大厅页面正常加载 | 严重 |
-| TC-108 | TestSupplyHall.test_supply_items_display | 供应商品卡片展示 | 严重 |
-| TC-109 | TestSupplyHall.test_supply_item_images_load | 商品图片加载 | 一般 |
-| TC-110 | TestSupplyHall.test_supply_item_price_display | 价格信息展示 | 一般 |
-| TC-111 | TestSupplyHall.test_supply_item_click | 供应商品点击跳转 | 严重 |
-| TC-112 | TestSupplyHall.test_supply_item_detail_consistency | 商品详情与列表一致性 | 严重 |
-| TC-113 | TestSupplyHall.test_publish_button | 发布商品按钮 | 一般 |
-| TC-114 | TestSupplyHall.test_inquiry_button | 求购询价按钮 | 一般 |
-| TC-115 | TestSupplyHall.test_customer_service_button | 联系客服按钮 | 一般 |
-| TC-116 | TestSupplyHall.test_intent_form_button | 意向填报按钮 | 一般 |
-| TC-117 | TestSupplyHall.test_pagination | 分页功能 | 轻微 |
-| TC-118 | TestSupplyHall.test_nav_to_intelligent_construction | 导航到智能建造页面 | 一般 |
-| TC-119 | TestSupplyHall.test_nav_to_key_project | 导航到重点项目页面 | 一般 |
-| TC-120 | TestSupplyHall.test_filter_建筑材料 | 建筑材料分类筛选 | 严重 |
-| TC-121 | TestSupplyHall.test_filter_水电暖通 | 水电暖通分类筛选 | 严重 |
-| TC-122 | TestSupplyHall.test_filter_机械设备 | 机械设备分类筛选 | 严重 |
-| TC-123 | TestSupplyHall.test_filter_工程机械 | 工程机械分类筛选 | 严重 |
-| TC-124 | TestSupplyHall.test_filter_劳务用工 | 劳务用工分类筛选 | 严重 |
-| TC-125 | TestSupplyHall.test_filter_sub_土建 | 土建子分类筛选 | 一般 |
-| TC-126 | TestSupplyHall.test_filter_sub_装饰装修 | 装饰装修子分类筛选 | 一般 |
-| TC-127 | TestSupplyHall.test_filter_sub_电气 | 电气子分类筛选 | 一般 |
-| TC-128 | TestSupplyHall.test_search | 搜索商品 | 一般 |
-| TC-129 | TestSupplyHall.test_reset | 重置搜索 | 一般 |
+| TC-106 | TestSupplyHall.test_no_console_errors | 控制台无未知错误 | 一般 |
+| TC-107 | TestSupplyHall.test_no_placeholder_content | 无未知测试占位符内容 | 一般 |
+| TC-108 | TestSupplyHall.test_images_alt_text | 图片alt文本检查 | 轻微 |
+| TC-109 | TestSupplyHall.test_supply_hall_page_load | 供应大厅页面正常加载 | 严重 |
+| TC-110 | TestSupplyHall.test_supply_items_display | 供应商品卡片展示 | 严重 |
+| TC-111 | TestSupplyHall.test_supply_item_images_load | 商品图片加载 | 一般 |
+| TC-112 | TestSupplyHall.test_supply_item_price_display | 价格信息展示 | 一般 |
+| TC-113 | TestSupplyHall.test_supply_item_click | 供应商品点击跳转 | 严重 |
+| TC-114 | TestSupplyHall.test_supply_item_detail_consistency | 商品详情与列表一致性 | 严重 |
+| TC-115 | TestSupplyHall.test_publish_button | 发布商品按钮 | 一般 |
+| TC-116 | TestSupplyHall.test_inquiry_button | 求购询价按钮 | 一般 |
+| TC-117 | TestSupplyHall.test_customer_service_button | 联系客服按钮 | 一般 |
+| TC-118 | TestSupplyHall.test_intent_form_button | 意向填报按钮 | 一般 |
+| TC-119 | TestSupplyHall.test_pagination | 分页功能 | 轻微 |
+| TC-120 | TestSupplyHall.test_nav_to_intelligent_construction | 导航到智能建造页面 | 一般 |
+| TC-121 | TestSupplyHall.test_nav_to_key_project | 导航到重点项目页面 | 一般 |
+| TC-122 | TestSupplyHall.test_filter_建筑材料 | 建筑材料分类筛选 | 严重 |
+| TC-123 | TestSupplyHall.test_filter_水电暖通 | 水电暖通分类筛选 | 严重 |
+| TC-124 | TestSupplyHall.test_filter_机械设备 | 机械设备分类筛选 | 严重 |
+| TC-125 | TestSupplyHall.test_filter_工程机械 | 工程机械分类筛选 | 严重 |
+| TC-126 | TestSupplyHall.test_filter_劳务用工 | 劳务用工分类筛选 | 严重 |
+| TC-127 | TestSupplyHall.test_filter_sub_土建 | 土建子分类筛选 | 一般 |
+| TC-128 | TestSupplyHall.test_filter_sub_装饰装修 | 装饰装修子分类筛选 | 一般 |
+| TC-129 | TestSupplyHall.test_filter_sub_电气 | 电气子分类筛选 | 一般 |
+| TC-130 | TestSupplyHall.test_search | 搜索商品 | 一般 |
+| TC-131 | TestSupplyHall.test_reset | 重置搜索 | 一般 |
 | TC-489 | TestSupplyHall.test_page_load | 页面正常加载 | 严重 |
 | TC-490 | TestSupplyHall.test_nav_completeness | 导航栏完整性 | 严重 |
 | TC-491 | TestSupplyHall.test_nav_active_state | 链接高亮 | 一般 |
@@ -319,12 +319,12 @@
 
 | 编号 | 用例名称 | 用例标题 | 严重程度 |
 |------|----------|----------|----------|
-| TC-130 | TestA11yBasic.test_home_lang_and_headings | Web 首页语言与标题结构 | 轻微 |
-| TC-131 | TestA11yBasic.test_home_buttons_accessible_name | Web 首页按钮具备可访问名称 | 轻微 |
-| TC-132 | TestA11yBasic.test_home_inputs_labelled | Web 首页输入框具备标签/占位 | 轻微 |
-| TC-133 | TestA11yBasic.test_home_images_alt | Web 首页图片 alt（复用 ui_quality 配置） | 轻微 |
-| TC-134 | TestA11yBasic.test_h5_viewport_and_buttons | H5 首页 viewport 与按钮名称 | 轻微 |
-| TC-135 | TestA11yBasic.test_supply_hall_search_labelled | 供应大厅搜索框具备标签 | 轻微 |
+| TC-132 | TestA11yBasic.test_home_lang_and_headings | Web 首页语言与标题结构 | 轻微 |
+| TC-133 | TestA11yBasic.test_home_buttons_accessible_name | Web 首页按钮具备可访问名称 | 轻微 |
+| TC-134 | TestA11yBasic.test_home_inputs_labelled | Web 首页输入框具备标签/占位 | 轻微 |
+| TC-135 | TestA11yBasic.test_home_images_alt | Web 首页图片 alt（复用 ui_quality 配置） | 轻微 |
+| TC-136 | TestA11yBasic.test_h5_viewport_and_buttons | H5 首页 viewport 与按钮名称 | 轻微 |
+| TC-137 | TestA11yBasic.test_supply_hall_search_labelled | 供应大厅搜索框具备标签 | 轻微 |
 
 ### 产业需求（31）
 

@@ -24,7 +24,16 @@ class TestCloudService(BasePageTest):
     page_name = "云服务"
     page_fixture_name = "cloud_service_page"
 
-    # ==================== 通用测试（BasePageTest 自动继承） ====================
+    # 云服务页面已从首页导航移除，顶部导航完整性/高亮用例不适用
+    EXPECTED_NAV_TEXTS = []
+    SKIP_NAV_ACTIVE_ASSERT = True
+
+    # 云服务页面本身无顶部导航栏，不继承 BasePageTest 的导航相关通用用例
+    def test_nav_completeness(self) -> None:
+        pytest.skip("云服务页面无顶部导航栏，不适用导航完整性断言")
+
+    def test_nav_active_state(self) -> None:
+        pytest.skip("云服务页面无顶部导航栏，不适用导航高亮断言")
 
     # ==================== 服务筛选测试 ===================
 

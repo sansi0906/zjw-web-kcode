@@ -47,8 +47,6 @@ navigation:
       url_fragment: industryAssociation
     - text: 成果转化
       url_fragment: achievementTransformation
-    - text: 云服务
-      url_fragment: cloudService
     - text: 产业金融
       url_fragment: finance
 filter_tabs:
