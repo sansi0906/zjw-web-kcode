@@ -35,6 +35,8 @@ navigation:
     nav_links:
     - text: 首页
       url_fragment: /
+    - text: 价格信息
+      url_fragment: priceInfo
     - text: 供应大厅
       url_fragment: supplyHall
     - text: 智能建造

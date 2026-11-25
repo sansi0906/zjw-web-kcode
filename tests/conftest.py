@@ -50,6 +50,7 @@ from pages.achievement_transformation_page import AchievementTransformationPage 
 from pages.cloud_service_page import CloudServicePage  # noqa: E402
 from pages.industrial_service_page import IndustrialServicePage  # noqa: E402
 from pages.finance_page import FinancePage  # noqa: E402
+from pages.price_info_page import PriceInfoPage  # noqa: E402
 
 # Playwright 内置设备字典（用于 --device-name 参数）
 with sync_playwright() as _pw:
@@ -449,6 +450,7 @@ _PAGE_FIXTURES = [
     ("cloud_service_page", CloudServicePage, "function", "page"),
     ("industrial_service_page", IndustrialServicePage, "function", "page"),
     ("finance_page", FinancePage, "function", "page"),
+    ("price_info_page", PriceInfoPage, "function", "page"),
 ]
 
 
@@ -561,6 +563,7 @@ _H5_PAGE_FIXTURES = [
     ("h5_intelligent_construction_page", IntelligentConstructionPage, "h5_page"),
     ("h5_industrial_service_page", IndustrialServicePage, "h5_page"),
     ("h5_finance_page", FinancePage, "h5_page"),
+    ("h5_price_info_page", PriceInfoPage, "h5_page"),
 ]
 
 
