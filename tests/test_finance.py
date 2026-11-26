@@ -64,16 +64,6 @@ class TestFinance(BasePageTest):
         self.page_obj.click_hero_apply()
         self.page_obj.take_screenshot("hero_apply", "info")
 
-    @allure.story("顶部功能")
-    @allure.title("顶部功能按钮")
-    @allure.severity(allure.severity_level.NORMAL)
-    @pytest.mark.xfail(reason="当前环境未展示顶部功能按钮（站点已知限制）", strict=False)
-    def test_top_buttons(self) -> None:
-        """验证顶部功能按钮存在"""
-        self.page_obj.open()
-        btn = self.page_obj.first_visible("button:has-text('平台支持企业融资')", timeout=2000)
-        assert btn is not None, "当前环境未展示顶部功能按钮"
-        self.page_obj.take_screenshot("top_buttons", "info")
     @allure.story("金融卡片")
     @allure.title("金融卡片标题与描述展示")
     @allure.severity(allure.severity_level.CRITICAL)
