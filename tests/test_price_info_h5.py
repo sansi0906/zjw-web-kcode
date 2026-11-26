@@ -10,6 +10,7 @@ import pytest
 
 from tests.base_page_test import BasePageTest
 from pages.price_info_page import PriceInfoPage
+from utils.ui_quality import assert_console_clean, assert_no_placeholder_content, assert_images_alt
 
 pytestmark = [pytest.mark.h5, pytest.mark.regression]
 
@@ -62,3 +63,23 @@ class TestPriceInfoH5(BasePageTest):
         self.page_obj.open()
         self.page_obj.scroll_to_footer()
         self.page_obj.assert_text_visible("津ICP备")
+    @allure.story("页面健康度")
+    @allure.title("控制台无未知错误")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_console_errors(self, test_data) -> None:
+        self.page_obj.open()
+        assert_console_clean(self.page_obj.page, test_data, page_key="price_info_h5")
+
+    @allure.story("页面健康度")
+    @allure.title("无未知测试占位符内容")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_no_placeholder_content(self, test_data) -> None:
+        self.page_obj.open()
+        assert_no_placeholder_content(self.page_obj.page, test_data, page_key="price_info_h5")
+
+    @allure.story("页面健康度")
+    @allure.title("图片 alt 文本")
+    @allure.severity(allure.severity_level.MINOR)
+    def test_images_alt(self, test_data) -> None:
+        self.page_obj.open()
+        assert_images_alt(self.page_obj.page, test_data, page_key="price_info_h5", key="images_alt")

@@ -439,3 +439,21 @@ ui_quality:
   homepage_h5:
     console: {}
     placeholder: {}
+  finance:
+    console: {}
+    placeholder: {}
+    images_alt:
+      max_missing: 10
+      xfail_if_exceeded: true
+  finance_h5:
+    console: {}
+    placeholder: {}
+  price_info:
+    console: {}
+    placeholder: {}
+    images_alt:
+      max_missing: 10
+      xfail_if_exceeded: true
+  price_info_h5:
+    console: {}
+    placeholder: {}
