@@ -109,3 +109,24 @@ class TestFinance(BasePageTest):
             pytest.skip("当前环境金融卡片无「查看详情」按钮")
         self.page_obj.click_finance_card_button("查看详情")
         self.page_obj.take_screenshot("finance_card_detail", "info")
+    @allure.story("悬浮功能区")
+    @allure.title("在线客服按钮")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_finance_customer_service(self) -> None:
+        """点击在线客服悬浮按钮"""
+        self.page_obj.open()
+        btn = self.page_obj.first_visible(self.page_obj.FLOAT_CUSTOMER_SERVICE, timeout=3000)
+        assert btn is not None, "未找到在线客服按钮"
+        self.page_obj.click_customer_service()
+        self.page_obj.take_screenshot("finance_customer_service", "info")
+
+    @allure.story("悬浮功能区")
+    @allure.title("意向填报按钮")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_finance_intent_form(self) -> None:
+        """点击意向填报悬浮按钮"""
+        self.page_obj.open()
+        btn = self.page_obj.first_visible(self.page_obj.FLOAT_INTENT_FORM, timeout=3000)
+        assert btn is not None, "未找到意向填报按钮"
+        self.page_obj.click_intent_form()
+        self.page_obj.take_screenshot("finance_intent_form", "info")
