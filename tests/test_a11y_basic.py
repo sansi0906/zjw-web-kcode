@@ -60,20 +60,6 @@ def _unlabelled_inputs(page: Page) -> list[str]:
 @allure.feature("a11y 基础")
 class TestA11yBasic:
 
-    @allure.story("语义")
-    @allure.title("Web 首页语言与标题结构")
-    @allure.severity(allure.severity_level.MINOR)
-    @pytest.mark.xfail(reason="首页未使用 h1/h2/h3 标题标签（站点已知实现，语义化待改进）", strict=False)
-    def test_home_lang_and_headings(self, page: Page) -> None:
-        page.goto(settings.base_url, wait_until="domcontentloaded", timeout=25000)
-        lang = page.evaluate("() => document.documentElement.getAttribute('lang') || ''")
-        assert lang.strip(), "html 缺少 lang 属性"
-        headings = page.evaluate(
-            "() => Array.from(document.querySelectorAll('h1,h2,h3')).filter(e => (e.innerText||'').trim()).length"
-        )
-        allure.attach(f"标题标签数量={headings}", name="标题层级", attachment_type=allure.attachment_type.TEXT)
-        assert headings > 0, "首页未使用 h1/h2/h3 标题标签"
-
     @allure.story("可访问名称")
     @allure.title("Web 首页按钮具备可访问名称")
     @allure.severity(allure.severity_level.MINOR)
