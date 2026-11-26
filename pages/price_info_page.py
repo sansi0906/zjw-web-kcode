@@ -215,6 +215,25 @@ class PriceInfoPage(BasePage):
 
     def click_tab_by_name(self, name: str) -> None:
         self.click_tab(name)
+    def get_filter_options(self, filter_index: int) -> list[str]:
+        """打开第 filter_index 个筛选下拉并返回可用选项列表"""
+        items = self.page.locator("div.filter-item")
+        if items.count() <= filter_index:
+            return []
+        items.nth(filter_index).click()
+        self.page.wait_for_timeout(1500)
+        opts = self.page.evaluate(
+            """() => { const m = document.querySelector('.n-select-menu, .n-base-select-menu'); if (!m) return []; return [...new Set((m.innerText||'').split('\\n').map(t=>t.trim()).filter(t=>t))]; }"""
+        )
+        self.page.keyboard.press("Escape")
+        self.page.wait_for_timeout(300)
+        return opts or []
+
+    def get_filter_current_value(self, filter_index: int) -> str:
+        items = self.page.locator("div.filter-item")
+        if items.count() <= filter_index:
+            return ""
+        return (items.nth(filter_index).inner_text() or "").strip().split("\n")[-1].strip()
     def assert_page_loaded(self) -> None:
         if self.is_mobile():
             assert "priceInfo" in self.page.url, f"URL 不包含 priceInfo，实际: {self.page.url}"

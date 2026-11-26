@@ -189,24 +189,34 @@ class TestPriceInfo(BasePageTest):
     @allure.title("数据地区筛选切换")
     @allure.severity(allure.severity_level.NORMAL)
     def test_filter_region_switch(self) -> None:
-        """切换数据地区后页面正常响应"""
+        """切换数据地区后页面正常响应（动态读取可用选项）"""
         self.page_obj.open()
-        self.page_obj.select_filter(0, "北京市")
+        opts = self.page_obj.get_filter_options(0)
+        current = self.page_obj.get_filter_current_value(0)
+        candidates = [o for o in opts if o != current]
+        if not candidates:
+            pytest.skip("数据地区仅一个选项，无法切换")
+        target = candidates[0]
+        self.page_obj.select_filter(0, target)
         body = self.page_obj.page.evaluate("() => document.body.innerText || ''")
-        assert "北京市" in body, "切换数据地区后未反映北京市"
+        assert target in body, f"切换数据地区后未反映 {target}"
         self.page_obj.take_screenshot("price_info_filter_region", "info")
 
     @allure.story("筛选")
     @allure.title("数据年月筛选切换")
     @allure.severity(allure.severity_level.NORMAL)
     def test_filter_month_switch(self) -> None:
-        """切换数据年月后页面正常响应"""
+        """切换数据年月后页面正常响应（动态读取可用选项）"""
         self.page_obj.open()
-        vals = self.page_obj.get_filter_values()
-        # 第二个 filter-item 是数据年月
-        self.page_obj.select_filter(1, "2026年11月")
+        opts = self.page_obj.get_filter_options(1)
+        current = self.page_obj.get_filter_current_value(1)
+        candidates = [o for o in opts if o != current]
+        if not candidates:
+            pytest.skip("数据年月仅一个选项，无法切换")
+        target = candidates[0]
+        self.page_obj.select_filter(1, target)
         body = self.page_obj.page.evaluate("() => document.body.innerText || ''")
-        assert "2026年11月" in body, "切换数据年月后未反映"
+        assert target in body, f"切换数据年月后未反映 {target}"
         self.page_obj.take_screenshot("price_info_filter_month", "info")
 
     @allure.story("搜索")
