@@ -143,6 +143,46 @@ class FinancePage(BasePage):
         except Exception:
             return []
 
+    def get_finance_card_descriptions(self) -> list[str]:
+        if self._is_h5_finance_page():
+            try:
+                texts = self.page.evaluate(
+                    "() => Array.from(document.querySelectorAll('.finance-home-mobile .finance-product-card-mobile p')).map(e => (e.textContent||'').trim().slice(0,80)).filter(t => t)"
+                )
+                return texts or []
+            except Exception:
+                return []
+        try:
+            texts = self.page.evaluate(
+                """() => Array.from(document.querySelectorAll('.finance-card'))
+                    .map(e => { const p = e.querySelector('p, .desc, [class*="desc"]'); return p ? (p.textContent||'').trim().slice(0,80) : ''; })
+                    .filter(t => t)"""
+            )
+            return texts
+        except Exception:
+            return []
+
+    def get_finance_card_button_texts(self) -> list[str]:
+        if self._is_h5_finance_page():
+            return []
+        try:
+            texts = self.page.evaluate(
+                """() => Array.from(document.querySelectorAll('.finance-card button'))
+                    .map(e => (e.innerText||'').trim()).filter(t => t)"""
+            )
+            return texts
+        except Exception:
+            return []
+
+    def click_finance_card_button(self, text: str) -> None:
+        if self._is_h5_finance_page():
+            return
+        btn = self.page.locator(f".finance-card button:has-text('{text}')").first
+        if btn.is_visible(timeout=2000):
+            btn.click()
+            self.wait_for_load()
+
+
     def assert_finance_exists(self, min_count: int = 1) -> None:
         count = self.get_finance_count()
         if count < min_count:

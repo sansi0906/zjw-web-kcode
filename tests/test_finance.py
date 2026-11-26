@@ -74,3 +74,38 @@ class TestFinance(BasePageTest):
         btn = self.page_obj.first_visible("button:has-text('平台支持企业融资')", timeout=2000)
         assert btn is not None, "当前环境未展示顶部功能按钮"
         self.page_obj.take_screenshot("top_buttons", "info")
+    @allure.story("金融卡片")
+    @allure.title("金融卡片标题与描述展示")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_finance_card_titles_and_descs(self) -> None:
+        """验证金融卡片标题与描述非空"""
+        self.page_obj.open()
+        titles = self.page_obj.get_finance_card_titles()
+        descs = self.page_obj.get_finance_card_descriptions()
+        assert len(titles) >= 3, f"金融卡片标题不足 3 个，实际: {titles}"
+        assert len(descs) >= 3, f"金融卡片描述不足 3 条，实际: {len(descs)}"
+        for d in descs:
+            assert len(d) > 5, f"金融卡片描述过短: {d!r}"
+        self.page_obj.take_screenshot("finance_card_titles_descs", "info")
+
+    @allure.story("金融卡片")
+    @allure.title("金融卡片按钮展示")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_finance_card_buttons(self) -> None:
+        """验证金融卡片存在按钮（查看详情/申请融资）"""
+        self.page_obj.open()
+        btns = self.page_obj.get_finance_card_button_texts()
+        assert len(btns) >= 3, f"金融卡片按钮不足 3 个，实际: {btns}"
+        self.page_obj.take_screenshot("finance_card_buttons", "info")
+
+    @allure.story("金融卡片")
+    @allure.title("金融卡片查看详情按钮点击")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_finance_card_detail_button(self) -> None:
+        """点击金融卡片「查看详情」按钮"""
+        self.page_obj.open()
+        btns = self.page_obj.get_finance_card_button_texts()
+        if "查看详情" not in btns:
+            pytest.skip("当前环境金融卡片无「查看详情」按钮")
+        self.page_obj.click_finance_card_button("查看详情")
+        self.page_obj.take_screenshot("finance_card_detail", "info")

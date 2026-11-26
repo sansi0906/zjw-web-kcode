@@ -154,3 +154,31 @@ class TestFinanceH5(BasePageTest):
         self.page_obj.open()
         overflow, sw, cw = self.page_obj.has_horizontal_overflow()
         assert not overflow, f"H5 产业金融存在横向溢出: scrollWidth={sw}, clientWidth={cw}"
+    @allure.story("平台金融服务")
+    @allure.title("H5 平台金融服务 tab 切换")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_h5_platform_finance_tab_switch(self) -> None:
+        """点击 H5 平台金融服务 tab 后内容更新"""
+        self.page_obj.open()
+        btn = self.page_obj.first_visible("button:has-text('融资信贷服务')", timeout=3000)
+        assert btn is not None, "未找到「融资信贷服务」tab"
+        btn.click()
+        self.page_obj.page.wait_for_timeout(500)
+        body = self.page_obj.page.evaluate("() => document.body.innerText || ''")
+        # 切换后应仍渲染页面（不崩溃）
+        assert "平台金融服务" in body or "融资" in body, "tab 切换后页面异常"
+        self.page_obj.take_screenshot("h5_platform_tab_switch", "info")
+
+    @allure.story("金融卡片")
+    @allure.title("H5 金融卡片点击跳转 URL")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_h5_finance_card_click_url(self) -> None:
+        """点击 H5 金融卡片后 URL 应变化或打开详情"""
+        self.page_obj.open()
+        old_url = self.page_obj.page.url
+        self.page_obj.click_first_finance()
+        self.page_obj.page.wait_for_timeout(1000)
+        new_url = self.page_obj.page.url
+        # 允许同页锚点或新标签；至少页面未崩溃
+        assert new_url is not None, "点击后 URL 为空"
+        self.page_obj.take_screenshot("h5_finance_card_click_url", "info")

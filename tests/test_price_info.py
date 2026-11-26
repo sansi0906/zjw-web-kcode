@@ -162,3 +162,61 @@ class TestPriceInfo(BasePageTest):
         rows = self.page_obj.get_table_row_count()
         assert rows >= 1, f"翻页后表格无数据，行数={rows}"
         self.page_obj.take_screenshot("price_info_page2", "info")
+    @allure.story("功能切换")
+    @allure.title("切换到预拌砂浆 tab")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_tab_switch_mortar(self) -> None:
+        """切换到「预拌砂浆」tab 后激活态更新"""
+        self.page_obj.open()
+        self.page_obj.click_tab("预拌砂浆")
+        active = self.page_obj.get_active_tab()
+        assert "预拌砂浆" in active, f"切换后激活 tab 不正确，实际: {active!r}"
+        self.page_obj.take_screenshot("price_info_tab_mortar", "info")
+
+    @allure.story("功能切换")
+    @allure.title("切换到人工单价 tab")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_tab_switch_labor(self) -> None:
+        """切换到「人工单价」tab 后激活态更新"""
+        self.page_obj.open()
+        self.page_obj.click_tab("人工单价")
+        active = self.page_obj.get_active_tab()
+        assert "人工单价" in active, f"切换后激活 tab 不正确，实际: {active!r}"
+        self.page_obj.take_screenshot("price_info_tab_labor", "info")
+
+    @allure.story("筛选")
+    @allure.title("数据地区筛选切换")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_filter_region_switch(self) -> None:
+        """切换数据地区后页面正常响应"""
+        self.page_obj.open()
+        self.page_obj.select_filter(0, "北京市")
+        body = self.page_obj.page.evaluate("() => document.body.innerText || ''")
+        assert "北京市" in body, "切换数据地区后未反映北京市"
+        self.page_obj.take_screenshot("price_info_filter_region", "info")
+
+    @allure.story("筛选")
+    @allure.title("数据年月筛选切换")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_filter_month_switch(self) -> None:
+        """切换数据年月后页面正常响应"""
+        self.page_obj.open()
+        vals = self.page_obj.get_filter_values()
+        # 第二个 filter-item 是数据年月
+        self.page_obj.select_filter(1, "2026年11月")
+        body = self.page_obj.page.evaluate("() => document.body.innerText || ''")
+        assert "2026年11月" in body, "切换数据年月后未反映"
+        self.page_obj.take_screenshot("price_info_filter_month", "info")
+
+    @allure.story("搜索")
+    @allure.title("搜索无结果提示")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_search_no_result(self) -> None:
+        """搜索不存在的关键词应给出无结果或空表"""
+        self.page_obj.open()
+        self.page_obj.fill_search("zzz不存在的关键词zzz")
+        self.page_obj.click_search()
+        body = self.page_obj.page.evaluate("() => document.body.innerText || ''")
+        # 不崩溃即可；允许空表或提示
+        assert ("价格明细" in body) or ("没有" in body) or ("暂无" in body) or ("无数据" in body), "搜索后页面异常"
+        self.page_obj.take_screenshot("price_info_search_no_result", "info")

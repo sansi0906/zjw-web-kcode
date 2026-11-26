@@ -183,6 +183,35 @@ class PriceInfoPage(BasePage):
         except Exception:
             return False
 
+    def select_filter(self, filter_index: int, option_text: str) -> None:
+        """点击第 filter_index 个筛选项并选择 option_text"""
+        items = self.page.locator("div.filter-item")
+        if items.count() <= filter_index:
+            return
+        items.nth(filter_index).click()
+        try:
+            self.page.wait_for_timeout(500)
+            opt = self.page.locator(f".n-select-option:has-text('{option_text}')").first
+            if opt.is_visible(timeout=2000):
+                opt.click()
+            self.page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=3000)
+            except Exception:
+                pass
+
+    def get_filter_values(self) -> list[str]:
+        """获取筛选区当前值列表"""
+        try:
+            return self.page.evaluate(
+                """() => Array.from(document.querySelectorAll('div.filter-item')).map(e => (e.innerText||'').trim().replace(/\\n/g,'：'))"""
+            )
+        except Exception:
+            return []
+
+    def click_tab_by_name(self, name: str) -> None:
+        self.click_tab(name)
     def assert_page_loaded(self) -> None:
         if self.is_mobile():
             assert "priceInfo" in self.page.url, f"URL 不包含 priceInfo，实际: {self.page.url}"
