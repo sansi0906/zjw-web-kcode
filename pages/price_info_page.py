@@ -16,6 +16,9 @@ class PriceInfoPage(BasePage):
 
     PAGE_URL = "/priceInfo"
 
+    FLOAT_CUSTOMER_SERVICE = "div:has-text('在线客服')"
+    FLOAT_INTENT_FORM = "div:has-text('意向填报')"
+
     # 顶部导航（价格信息在主导航中）
     NAV_ITEMS = "header a, nav a, [class*='nav'] a, [class*='header'] a"
     NAV_PRICE_INFO = "text=价格信息"

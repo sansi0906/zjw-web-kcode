@@ -220,3 +220,24 @@ class TestPriceInfo(BasePageTest):
         # 不崩溃即可；允许空表或提示
         assert ("价格明细" in body) or ("没有" in body) or ("暂无" in body) or ("无数据" in body), "搜索后页面异常"
         self.page_obj.take_screenshot("price_info_search_no_result", "info")
+    @allure.story("悬浮功能区")
+    @allure.title("在线客服按钮")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_price_info_customer_service(self) -> None:
+        """点击在线客服悬浮按钮"""
+        self.page_obj.open()
+        btn = self.page_obj.first_visible(self.page_obj.FLOAT_CUSTOMER_SERVICE, timeout=3000)
+        assert btn is not None, "未找到在线客服按钮"
+        self.page_obj.click_customer_service()
+        self.page_obj.take_screenshot("price_info_customer_service", "info")
+
+    @allure.story("悬浮功能区")
+    @allure.title("意向填报按钮")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_price_info_intent_form(self) -> None:
+        """点击意向填报悬浮按钮"""
+        self.page_obj.open()
+        btn = self.page_obj.first_visible(self.page_obj.FLOAT_INTENT_FORM, timeout=3000)
+        assert btn is not None, "未找到意向填报按钮"
+        self.page_obj.click_intent_form()
+        self.page_obj.take_screenshot("price_info_intent_form", "info")
